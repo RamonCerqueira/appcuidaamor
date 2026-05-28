@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #F472B6;
+  --color-brand-secondary: #2DD4BF;
+  --color-brand-accent: #FBBF24;
+  --color-brand-tertiary: #34D399;
+  --color-brand-background: #FCFCFD;
+  --color-brand-surface: #FFFFFF;
+  --color-brand-text: #3F3F46;
+  --color-brand-text-light: #71717A;
+  
+  --font-sans: var(--font-plus-jakarta), var(--font-outfit), "Inter", sans-serif;
+  --font-display: var(--font-outfit), sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-brand-background);
+    color: var(--color-brand-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Utilitários para Scrollbar Invisível */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

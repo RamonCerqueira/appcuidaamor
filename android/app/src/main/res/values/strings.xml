@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CuidaAmor</string>
+    <string name="title_activity_main">CuidaAmor</string>
+    <string name="package_name">com.cuidaeamor.app</string>
+    <string name="custom_url_scheme">com.cuidaeamor.app</string>
+</resources>
