@@ -15,6 +15,7 @@ import {
   Headphones,
   FileText,
   ChevronRight,
+  ShieldAlert,
 } from 'lucide-react';
 import { BottomSheet } from './ui/BottomSheet';
 
@@ -139,6 +140,26 @@ export default function BottomNav() {
         title="Mais Opções"
       >
         <div className="grid grid-cols-1 gap-2 pt-1">
+          {/* Central de Emergência e Proteção Rápida */}
+          <button
+            onClick={() => handleNavigate('/suporte')}
+            className="flex items-center justify-between p-4 rounded-2xl bg-rose-50/80 hover:bg-rose-100/70 border border-rose-100 transition-all text-left group cursor-pointer"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-white text-rose-600 flex items-center justify-center border border-rose-200/60 shadow-2xs group-hover:scale-105 transition-transform">
+                <ShieldAlert size={20} />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-black text-rose-900">Emergência & Proteção</span>
+                  <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-rose-200 text-rose-800 rounded-full">SAMU 192</span>
+                </div>
+                <span className="text-xs text-rose-700/85 font-medium">SAMU, Bombeiros, Polícia e Apoio ao Idoso</span>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-rose-400 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+
           <button
             onClick={() => handleNavigate('/boletos')}
             className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-pink-50/50 border border-slate-100 hover:border-pink-100 transition-all text-left group cursor-pointer"
@@ -212,8 +233,8 @@ export default function BottomNav() {
                 <Headphones size={20} />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-slate-800">Central de Ajuda</span>
-                <span className="text-xs text-slate-500 font-medium">WhatsApp, ligação e emergência</span>
+                <span className="text-sm font-bold text-slate-800">Central de Ajuda Cuida e Amor</span>
+                <span className="text-xs text-slate-500 font-medium">WhatsApp, ligação e perguntas frequentes</span>
               </div>
             </div>
             <ChevronRight size={18} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
