@@ -13,6 +13,9 @@ import {
   Sparkles,
   ShieldCheck,
   FileText,
+  Bell,
+  HeartHandshake,
+  CalendarCheck,
 } from 'lucide-react';
 import { MeuFamiliarAgora } from '@/components/shared/MeuFamiliarAgora';
 import { TimelineCuidado } from '@/components/shared/TimelineCuidado';
@@ -21,14 +24,20 @@ import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function Home() {
   const [data, setData] = useState<any>(null);
+  const [notificacoes, setNotificacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/dashboard')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.sucesso) {
-          setData(json);
+    Promise.all([
+      fetch('/api/dashboard').then((res) => res.json()).catch(() => ({})),
+      fetch('/api/notificacoes').then((res) => res.json()).catch(() => ({})),
+    ])
+      .then(([dashJson, notifJson]) => {
+        if (dashJson?.sucesso) {
+          setData(dashJson);
+        }
+        if (notifJson?.sucesso && Array.isArray(notifJson.notificacoes)) {
+          setNotificacoes(notifJson.notificacoes.slice(0, 2));
         }
         setLoading(false);
       })
@@ -74,6 +83,7 @@ export default function Home() {
         userInitials={userInitials}
         userName={responsavel}
         showSearch
+        showNotificationDot={notificacoes.length > 0}
       />
 
       <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
@@ -177,7 +187,48 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 5. Central de Contato & Emergência Rápida */}
+        {/* 5. Últimos Comunicados & Notificações */}
+        {notificacoes.length > 0 && (
+          <section className="flex flex-col gap-2.5">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+                Últimos Comunicados
+              </span>
+              <Link
+                href="/notificacoes"
+                className="text-xs font-bold text-[var(--color-brand-primary)] hover:underline flex items-center gap-0.5"
+              >
+                <span>Ver todos</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              {notificacoes.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.link}
+                  className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-xs hover:border-pink-100 transition-all flex items-center gap-3 active:scale-[0.99]"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-pink-50 text-[var(--color-brand-primary)] flex items-center justify-center shrink-0 border border-pink-100">
+                    <Bell size={16} />
+                  </div>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <h5 className="text-xs font-extrabold text-slate-800 truncate">
+                      {item.titulo}
+                    </h5>
+                    <p className="text-[11px] text-slate-500 font-medium truncate">
+                      {item.descricao}
+                    </p>
+                  </div>
+                  <ChevronRight size={15} className="text-slate-300 shrink-0" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 6. Central de Contato & Emergência Rápida */}
         <section className="bg-slate-900 rounded-3xl p-5 text-white flex flex-col gap-3 shadow-lg shadow-slate-900/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
