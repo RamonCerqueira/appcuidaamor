@@ -1,16 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import { AUTH_COOKIE } from '@/lib/auth'
 
-export async function POST(request: NextRequest) {
-  const response = NextResponse.json({ sucesso: true, mensagem: 'Logout realizado com sucesso' })
-  
+export async function POST() {
+  const response = NextResponse.json({ sucesso: true, mensagem: 'Sessão encerrada com segurança.' })
+
   response.cookies.set({
-    name: 'mobile_token',
+    name: AUTH_COOKIE.name,
     value: '',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/',
-    maxAge: 0
+    ...AUTH_COOKIE.options,
+    maxAge: 0,
   })
 
   return response

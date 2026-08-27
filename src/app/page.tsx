@@ -1,9 +1,23 @@
 'use client';
 
-import Header from '@/components/Header';
-import { Calendar, CreditCard, ChevronRight, Activity, Heart, UserCircle2, Clock, User } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import Header from '@/components/Header';
+import {
+  Activity,
+  Calendar,
+  CreditCard,
+  ClipboardList,
+  PhoneCall,
+  ChevronRight,
+  Sparkles,
+  ShieldCheck,
+  FileText,
+} from 'lucide-react';
+import { MeuFamiliarAgora } from '@/components/shared/MeuFamiliarAgora';
+import { TimelineCuidado } from '@/components/shared/TimelineCuidado';
+import { ConfirmacaoFamiliar } from '@/components/shared/ConfirmacaoFamiliar';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function Home() {
   const [data, setData] = useState<any>(null);
@@ -11,8 +25,8 @@ export default function Home() {
 
   useEffect(() => {
     fetch('/api/dashboard')
-      .then(res => res.json())
-      .then(json => {
+      .then((res) => res.json())
+      .then((json) => {
         if (json.sucesso) {
           setData(json);
         }
@@ -23,127 +37,189 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full relative pb-24">
-        <Header title="Painel Principal" subtitle="Carregando dados..." />
-        <main className="flex-1 px-6 pt-6 flex flex-col gap-8 animate-pulse">
-          <div className="h-32 bg-slate-200 rounded-2xl" />
-          <div className="h-40 bg-slate-200 rounded-2xl" />
-          <div className="grid grid-cols-2 gap-4"><div className="h-32 bg-slate-200 rounded-2xl"/><div className="h-32 bg-slate-200 rounded-2xl"/></div>
+      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+        <Header title="Visão Geral" subtitle="Carregando..." />
+        <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
+          <Skeleton className="h-44 rounded-3xl" />
+          <Skeleton className="h-64 rounded-3xl" />
+          <div className="grid grid-cols-2 gap-3.5">
+            <Skeleton className="h-28 rounded-3xl" />
+            <Skeleton className="h-28 rounded-3xl" />
+          </div>
         </main>
       </div>
     );
   }
 
-  const responsavel = data?.responsavel?.Cliente || data?.responsavel?.Razao || 'Família Silva';
+  const responsavel =
+    data?.responsavel?.Cliente || data?.responsavel?.Razao || 'Família Silva';
   const paciente = data?.paciente;
   const cuidador = data?.cuidadorHoje;
   const boletosPendentes = data?.notificacoes?.boletosPendentes || 0;
 
   const primeiroNome = responsavel.split(' ')[0];
-  const userInitials = responsavel.split(' ').filter((n: string) => n).map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+  const userInitials = responsavel
+    .split(' ')
+    .filter(Boolean)
+    .map((n: string) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || 'FS';
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full relative pb-24">
-      <Header title="Visão Geral" subtitle={`Olá, ${primeiroNome}`} userInitials={userInitials} />
+    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+      <Header
+        title="Visão Geral"
+        subtitle={`Olá, ${primeiroNome}`}
+        userInitials={userInitials}
+        userName={responsavel}
+        showSearch
+      />
 
-      <main className="flex-1 px-6 pt-6 flex flex-col gap-6">
-        
-        {/* Patient Card - Serene Layout */}
-        <div className="bg-white rounded-3xl p-6 shadow-xl shadow-pink-100/40 border border-pink-50 flex flex-col gap-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-50 to-teal-50 rounded-full blur-2xl pointer-events-none -mr-10 -mt-10" />
-          
-          <div className="flex justify-between items-center z-10">
-             <h3 className="text-slate-500 text-xs font-bold uppercase tracking-widest">Paciente Assistido</h3>
-             <span className="bg-teal-50 text-teal-600 border border-teal-100 text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-1">
-               <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-pulse"></span> Ativo
-             </span>
-          </div>
+      <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
+        {/* 1. "Meu Familiar Agora" (Visão Unificada de Alta Prioridade) */}
+        <MeuFamiliarAgora
+          paciente={paciente}
+          cuidador={cuidador}
+          scoreVitalidade={86}
+          ultimaAtualizacao="Hoje às 14:30"
+        />
 
-          <div className="flex items-center gap-4 z-10">
-            <div className="w-14 h-14 bg-gradient-to-br from-pink-50 to-pink-100/50 rounded-full flex items-center justify-center shrink-0 border border-pink-100/50 p-0.5">
-              {paciente?.Caminho ? (
-                <img src={paciente.Caminho} alt={paciente.Cliente} className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <UserCircle2 size={32} className="text-pink-300" strokeWidth={1.5} />
+        {/* 2. Diário / Timeline do Cuidado de Hoje */}
+        <TimelineCuidado />
+
+        {/* 3. Confirmação Familiar ("Está tudo bem?") */}
+        <ConfirmacaoFamiliar />
+
+        {/* 4. Grid de Acesso Rápido aos 4 Módulos Centrais */}
+        <section className="flex flex-col gap-2.5">
+          <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 px-1">
+            Acesso Rápido
+          </span>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            {/* Saúde */}
+            <Link
+              href="/quadro"
+              className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs hover:border-pink-200 transition-all flex flex-col justify-between h-32 group"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-pink-50 text-[var(--color-brand-primary)] flex items-center justify-center border border-pink-100 group-hover:scale-105 transition-transform">
+                <Activity size={20} strokeWidth={2.25} />
+              </div>
+              <div className="flex flex-col">
+                <h4 className="text-sm font-extrabold text-slate-800 tracking-tight">
+                  Saúde
+                </h4>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Prontuário e remédios
+                </p>
+              </div>
+            </Link>
+
+            {/* Escala */}
+            <Link
+              href="/escala"
+              className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs hover:border-cyan-200 transition-all flex flex-col justify-between h-32 group"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-cyan-50 text-[var(--color-brand-secondary)] flex items-center justify-center border border-cyan-100 group-hover:scale-105 transition-transform">
+                <Calendar size={20} strokeWidth={2.25} />
+              </div>
+              <div className="flex flex-col">
+                <h4 className="text-sm font-extrabold text-slate-800 tracking-tight">
+                  Escala
+                </h4>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Plantões e turnos
+                </p>
+              </div>
+            </Link>
+
+            {/* Financeiro */}
+            <Link
+              href="/boletos"
+              className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs hover:border-amber-200 transition-all flex flex-col justify-between h-32 group relative"
+            >
+              {boletosPendentes > 0 && (
+                <span className="absolute top-3.5 right-3.5 px-2 py-0.5 bg-amber-500 text-white font-extrabold text-[9px] rounded-full uppercase tracking-wider">
+                  {boletosPendentes} pendente
+                </span>
               )}
-            </div>
-            <div className="flex flex-col">
-              <h2 className="text-xl font-extrabold text-[var(--color-brand-text)] tracking-tight">
-                {paciente ? (paciente.Cliente || paciente.Razao) : 'Nenhum paciente vinculado'}
-              </h2>
-              <p className="text-sm text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
-                <Heart size={12} className="text-pink-400" fill="currentColor" /> Monitoramento Contínuo
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Caregiver Today */}
-        <section className="flex flex-col gap-3 mt-2">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-bold text-slate-500 tracking-widest uppercase">Plantão Atual</h3>
-            <Link href="/escala" className="text-xs font-semibold text-[var(--color-brand-secondary)] flex items-center hover:underline">
-              Ver escala completa <ChevronRight size={14} />
-            </Link>
-          </div>
-          
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col hover:shadow-md transition-shadow">
-            {cuidador ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-pink-50 rounded-full flex items-center justify-center text-pink-500 shadow-inner border border-pink-100">
-                    <User size={24} />
-                  </div>
-                  <div className="flex flex-col">
-                    <h3 className="font-extrabold text-[var(--color-brand-text)] text-sm tracking-tight">{cuidador.Nome}</h3>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <Clock size={12} className="text-gray-400" />
-                      <p className="text-xs text-[var(--color-brand-text-light)] font-semibold">{cuidador.HoraInicio} às {cuidador.HoraSaida}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-green-50 text-green-600 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest border border-green-100">
-                  {cuidador.Status || 'AGENDADO'}
-                </div>
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 group-hover:scale-105 transition-transform">
+                <CreditCard size={20} strokeWidth={2.25} />
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
-                <Calendar size={28} className="text-slate-300" strokeWidth={1.5} />
-                <p className="text-sm text-slate-500 font-medium">Não há plantão agendado para o dia de hoje.</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Action Grid */}
-        <section className="flex flex-col gap-3 mt-2 mb-4">
-          <h3 className="text-xs font-bold text-slate-500 tracking-widest uppercase px-1">Atalhos</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <Link href="/quadro" className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col items-start gap-4 hover:shadow-md hover:border-slate-300 transition-all group">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                <Activity size={20} className="text-blue-600" strokeWidth={2} />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-800">Saúde</h4>
-                <p className="text-[11px] text-slate-500 mt-1 font-medium">Acessar prontuário</p>
+              <div className="flex flex-col">
+                <h4 className="text-sm font-extrabold text-slate-800 tracking-tight">
+                  Financeiro
+                </h4>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  {boletosPendentes > 0 ? 'Fatura em aberto' : 'Tudo em dia'}
+                </p>
               </div>
             </Link>
-            
-            <Link href="/boletos" className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col items-start gap-4 hover:shadow-md hover:border-slate-300 transition-all group relative">
-              {boletosPendentes > 0 && <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-amber-500 ring-4 ring-amber-500/20" />}
-              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 transition-colors">
-                <CreditCard size={20} className="text-amber-600" strokeWidth={2} />
+
+            {/* Pedidos */}
+            <Link
+              href="/pedidos"
+              className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs hover:border-emerald-200 transition-all flex flex-col justify-between h-32 group"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 group-hover:scale-105 transition-transform">
+                <ClipboardList size={20} strokeWidth={2.25} />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-800">Financeiro</h4>
-                <p className={`text-[11px] font-semibold mt-1 ${boletosPendentes > 0 ? 'text-amber-600' : 'text-slate-500'}`}>
-                  {boletosPendentes > 0 ? `${boletosPendentes} fatura(s) pendente(s)` : 'Tudo em dia'}
+              <div className="flex flex-col">
+                <h4 className="text-sm font-extrabold text-slate-800 tracking-tight">
+                  Solicitações
+                </h4>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Folgas e trocas
                 </p>
               </div>
             </Link>
           </div>
         </section>
 
+        {/* 5. Central de Contato & Emergência Rápida */}
+        <section className="bg-slate-900 rounded-3xl p-5 text-white flex flex-col gap-3 shadow-lg shadow-slate-900/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-pink-500/20 text-[var(--color-brand-primary-light)] flex items-center justify-center border border-pink-500/30">
+                <PhoneCall size={18} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-black text-white">
+                  Rede de Apoio e Emergência
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  Plantão 24 horas da coordenação
+                </span>
+              </div>
+            </div>
+
+            <Link
+              href="/suporte"
+              className="text-xs font-bold text-[var(--color-brand-primary-light)] hover:underline"
+            >
+              Ver contatos
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5 pt-1">
+            <a
+              href="https://wa.me/557135069426"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-2.5 px-3 bg-white/10 hover:bg-white/15 rounded-2xl border border-white/10 text-xs font-bold text-center transition-colors flex items-center justify-center gap-1.5"
+            >
+              <span>WhatsApp Equipe</span>
+            </a>
+
+            <a
+              href="tel:192"
+              className="py-2.5 px-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-2xl border border-rose-500/30 text-xs font-bold text-center transition-colors flex items-center justify-center gap-1.5"
+            >
+              <span>SAMU 192</span>
+            </a>
+          </div>
+        </section>
       </main>
     </div>
   );

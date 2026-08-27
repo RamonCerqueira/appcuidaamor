@@ -1,43 +1,101 @@
 'use client';
 
-import { Bell } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bell, ArrowLeft, Search, PhoneCall } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Avatar } from './ui/Avatar';
+import { BuscaGlobal } from './shared/BuscaGlobal';
 
 interface HeaderProps {
   title: string;
   subtitle?: string;
+  showBack?: boolean;
+  onBack?: () => void;
   showNotificationDot?: boolean;
+  showSearch?: boolean;
   userInitials?: string;
+  userName?: string;
 }
 
-export default function Header({ title, subtitle = "Família Silva", showNotificationDot = true, userInitials = "U" }: HeaderProps) {
+export default function Header({
+  title,
+  subtitle,
+  showBack = false,
+  onBack,
+  showNotificationDot = true,
+  showSearch = true,
+  userInitials = 'FS',
+  userName = 'Responsável',
+}: HeaderProps) {
   const router = useRouter();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
+  };
 
   return (
-    <header className="w-full bg-gradient-to-r from-pink-100/95 via-white/95 to-pink-300/95 backdrop-blur-xl px-6 pt-12 pb-5 flex items-center justify-between shadow-[0_4px_30px_-10px_rgba(0,0,0,0.05)] sticky top-0 z-50 border-b border-pink-100/60 relative rounded-b-4xl">
-      <div className="flex flex-col relative z-10">
-        <span className="text-[10px] font-bold text-[var(--color-brand-secondary)] uppercase tracking-wider mb-0.5">{subtitle}</span>
-        <h1 className="text-2xl font-extrabold text-[var(--color-brand-text)] leading-none tracking-tight">{title}</h1>
-      </div>
-     
-      <div className="flex items-center gap-3 relative z-10">
-        <button 
-          onClick={() => router.push('/notificacoes')}
-          className="w-10 h-10 rounded-full bg-white/80 flex items-center justify-center relative transition-transform active:scale-95 border border-pink-100 hover:bg-white"
-        >
-          <Bell size={20} className="text-[var(--color-brand-primary)]" />
-          {showNotificationDot && (
-            <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[var(--color-brand-secondary)] border border-white" />
+    <>
+      <header className="w-full bg-white/95 backdrop-blur-xl px-5 pt-8 pb-4 flex items-center justify-between sticky top-0 z-40 border-b border-slate-100 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.03)]">
+        <div className="flex items-center gap-3">
+          {showBack && (
+            <button
+              onClick={handleBack}
+              aria-label="Voltar"
+              className="w-10 h-10 rounded-full bg-slate-50 text-slate-700 hover:bg-slate-100 flex items-center justify-center border border-slate-200/60 active:scale-95 transition-all cursor-pointer"
+            >
+              <ArrowLeft size={18} strokeWidth={2.5} />
+            </button>
           )}
-        </button>
-        
-        <button 
-          onClick={() => router.push('/perfil')}
-          className="w-10 h-10 rounded-full bg-[var(--color-brand-tertiary)] flex items-center justify-center border-2 border-white shadow-md active:scale-95 transition-transform"
-        >
-          <span className="font-bold text-sm text-white">{userInitials}</span>
-        </button>
-      </div>
-    </header>
+          <div className="flex flex-col">
+            {subtitle && (
+              <span className="text-[10px] font-extrabold text-[var(--color-brand-secondary)] uppercase tracking-widest mb-0.5">
+                {subtitle}
+              </span>
+            )}
+            <h1 className="text-xl font-black text-slate-800 tracking-tight leading-none">
+              {title}
+            </h1>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {showSearch && (
+            <button
+              onClick={() => setSearchOpen(true)}
+              aria-label="Buscar no aplicativo"
+              className="w-9 h-9 rounded-full bg-slate-50 hover:bg-pink-50/60 flex items-center justify-center transition-all active:scale-95 border border-slate-100 hover:border-pink-100 text-slate-600 hover:text-[var(--color-brand-primary)] cursor-pointer"
+            >
+              <Search size={16} />
+            </button>
+          )}
+
+          <button
+            onClick={() => router.push('/notificacoes')}
+            aria-label="Notificações"
+            className="w-9 h-9 rounded-full bg-slate-50 hover:bg-pink-50/60 flex items-center justify-center relative transition-all active:scale-95 border border-slate-100 hover:border-pink-100 cursor-pointer"
+          >
+            <Bell size={16} className="text-slate-600 hover:text-[var(--color-brand-primary)] transition-colors" />
+            {showNotificationDot && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--color-brand-primary)] ring-2 ring-white" />
+            )}
+          </button>
+
+          <button
+            onClick={() => router.push('/perfil')}
+            aria-label="Perfil"
+            className="active:scale-95 transition-transform cursor-pointer ml-0.5"
+          >
+            <Avatar name={userName} size="sm" variant="pink" />
+          </button>
+        </div>
+      </header>
+
+      <BuscaGlobal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+    </>
   );
 }

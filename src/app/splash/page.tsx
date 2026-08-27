@@ -1,267 +1,236 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+/**
+ * Splash — Cuida e Amor
+ * 
+ * Conceito: "Acolhimento Luminoso"
+ * 
+ * - SEM canvas de partículas (eram dots de PowerPoint)
+ * - SEM card/box ao redor do logo
+ * - Logo GRANDE e solto — o logo É o herói
+ * - Dois orbs CSS suaves — profundidade sem exagero
+ * - Tipografia hierárquica e espaçada
+ * - Progresso integrado à composição
+ * - Tudo num único ritmo visual
+ */
 export default function Splash() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [phase, setPhase] = useState(0);
 
   useEffect(() => {
-    setMounted(true);
-    // Simula tempo de carregamento e direciona
-    const timer = setTimeout(() => {
-      router.push('/onboarding');
-    }, 4500);
-
-    return () => clearTimeout(timer);
+    const t1 = setTimeout(() => setPhase(1), 100);
+    const t2 = setTimeout(() => setPhase(2), 650);
+    const t3 = setTimeout(() => setPhase(3), 1150);
+    const t4 = setTimeout(() => router.push('/onboarding'), 4200);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [router]);
 
-  useEffect(() => {
-    if (!mounted || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animationFrameId: number;
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    // --- CLASSE DE BALÃO DE CORAÇÃO ROSA FLUTUANTE (FADE OUT NO MEIO) ---
-    class HeartBalloon {
-      x: number;
-      y: number;
-      size: number;
-      speedX: number;
-      speedY: number;
-      color: string;
-      alpha: number;
-      maxAlpha: number;
-      swayAngle: number;
-      swaySpeed: number;
-      swayAmount: number;
-
-      constructor(initAtBottom = false) {
-        this.size = Math.random() * 14 + 10; // Tamanhos ligeiramente menores para maior harmonia na enxurrada
-        this.x = Math.random() * width;
-        
-        // Se for inicialização, distribui na metade inferior da tela, senão inicia estritamente no rodapé
-        const halfHeight = height / 2;
-        this.y = initAtBottom 
-          ? height + this.size * 2 
-          : halfHeight + Math.random() * halfHeight;
-        
-        this.speedX = (Math.random() - 0.5) * 0.15;
-        this.speedY = -Math.random() * 0.9 - 0.4; // Flutua um pouco mais rápido para a enxurrada fluir
-        
-        const pinkTones = [
-          'rgba(244, 114, 182, ', // var(--color-brand-primary) rosa delicado
-          'rgba(251, 113, 133, ', // Rosa suave
-          'rgba(244, 63, 94, ',  // Rosa mais vibrante
-          'rgba(236, 72, 153, ',  // Magenta suave
-        ];
-        this.color = pinkTones[Math.floor(Math.random() * pinkTones.length)];
-        this.maxAlpha = Math.random() * 0.4 + 0.15; // Opacidade translúcida sutil
-        this.alpha = this.maxAlpha;
-        
-        // Ondulação suave
-        this.swayAngle = Math.random() * Math.PI * 2;
-        this.swaySpeed = Math.random() * 0.02 + 0.01;
-        this.swayAmount = Math.random() * 0.5 + 0.2;
-      }
-
-      update(mouseX: number, mouseY: number) {
-        this.swayAngle += this.swaySpeed;
-        
-        // Flutuação ascendente com balanço horizontal
-        this.x += Math.sin(this.swayAngle) * this.swayAmount + this.speedX;
-        this.y += this.speedY;
-
-        // --- DINÂMICA DE FADE OUT ATÉ A METADE DA TELA ---
-        const halfHeight = height / 2;
-        if (this.y > halfHeight) {
-          // Calcula a proporção da altura entre a metade da tela e o fundo
-          // y = height -> progress = 1 (opacidade máxima)
-          // y = halfHeight -> progress = 0 (totalmente transparente)
-          const progress = (this.y - halfHeight) / halfHeight;
-          this.alpha = this.maxAlpha * Math.max(0, Math.min(1, progress));
-        } else {
-          this.alpha = 0;
-        }
-
-        // Reposiciona no rodapé quando chega no meio da tela ou fica invisível
-        if (this.y <= halfHeight || this.alpha <= 0.01) {
-          this.y = height + this.size * 2;
-          this.x = Math.random() * width;
-          this.alpha = 0;
-          this.maxAlpha = Math.random() * 0.4 + 0.15;
-          this.speedY = -Math.random() * 0.9 - 0.4;
-        }
-
-        // Repulsão suave do mouse
-        const dx = mouseX - this.x;
-        const dy = mouseY - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 120) {
-          const forceDirectionX = dx / distance;
-          const forceDirectionY = dy / distance;
-          const force = (120 - distance) / 120;
-          this.x -= forceDirectionX * force * 3;
-          this.y -= forceDirectionY * force * 3;
-        }
-      }
-
-      draw(c: CanvasRenderingContext2D) {
-        if (this.alpha <= 0) return; // Evita desenhar elementos invisíveis
-
-        c.save();
-        
-        c.translate(this.x, this.y);
-        c.rotate(Math.sin(this.swayAngle) * 0.08); // Ondulação do ângulo do balão
-
-        // Desenha o coração com Bezier Curves
-        c.beginPath();
-        c.moveTo(0, -this.size * 0.25);
-        // Lado esquerdo do coração
-        c.bezierCurveTo(-this.size * 0.5, -this.size * 0.8, -this.size, -this.size * 0.3, -this.size, this.size * 0.1);
-        c.bezierCurveTo(-this.size, this.size * 0.5, -this.size * 0.3, this.size * 0.8, 0, this.size * 1.1);
-        // Lado direito do coração
-        c.bezierCurveTo(this.size * 0.3, this.size * 0.8, this.size, this.size * 0.5, this.size, this.size * 0.1);
-        c.bezierCurveTo(this.size, -this.size * 0.3, this.size * 0.5, -this.size * 0.8, 0, -this.size * 0.25);
-        c.closePath();
-
-        // Degradê radial brilhante 3D
-        const gradient = c.createRadialGradient(
-          -this.size * 0.2,
-          -this.size * 0.2,
-          0,
-          0,
-          0,
-          this.size
-        );
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${this.alpha * 1.2})`); // Brilho de reflexo
-        gradient.addColorStop(0.3, `${this.color}${this.alpha})`);
-        gradient.addColorStop(1, `${this.color}${this.alpha * 0.15})`);
-
-        c.fillStyle = gradient;
-        c.fill();
-
-        // Pequena cordinha ondulada pendurada na ponta do coração
-        c.beginPath();
-        c.moveTo(0, this.size * 1.1);
-        c.bezierCurveTo(
-          Math.sin(this.swayAngle) * 2.5, this.size * 1.1 + 6,
-          -Math.sin(this.swayAngle) * 2.5, this.size * 1.1 + 12,
-          0, this.size * 1.1 + 18
-        );
-        c.strokeStyle = `rgba(244, 114, 182, ${this.alpha * 0.3})`;
-        c.lineWidth = 1.0;
-        c.stroke();
-
-        c.restore();
-      }
-    }
-
-    const balloons: HeartBalloon[] = [];
-    const init = () => {
-      // ENXURRADA DE CORAÇÕES: Aumentamos para 120 balões dinâmicos (alta densidade)
-      const count = Math.min(Math.floor(width / 5), 125);
-      for (let i = 0; i < count; i++) {
-        // Inicializa distribuídos na metade inferior na carga inicial
-        balloons.push(new HeartBalloon(false));
-      }
-    };
-    init();
-
-    // Rastreamento de mouse e touch
-    let mouseX = -1000;
-    let mouseY = -1000;
-
-    const handleMouseMove = (event: MouseEvent) => {
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-    };
-
-    const handleTouchMove = (event: TouchEvent) => {
-      if (event.touches.length > 0) {
-        mouseX = event.touches[0].clientX;
-        mouseY = event.touches[0].clientY;
-      }
-    };
-
-    const handleMouseLeave = () => {
-      mouseX = -1000;
-      mouseY = -1000;
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('touchmove', handleTouchMove);
-    window.addEventListener('mouseleave', handleMouseLeave);
-
-    const handleResize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // Loop de renderização 2D
-    const animate = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      balloons.forEach((b) => {
-        b.update(mouseX, mouseY);
-        b.draw(ctx);
-      });
-
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    // --- LIMPEZA DE RECURSOS ---
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('mouseleave', handleMouseLeave);
-      window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [mounted]);
-
-  if (!mounted) return null;
+  const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
   return (
-    <div className="flex flex-col min-h-[100vh] items-center justify-center w-full relative overflow-hidden bg-gradient-to-tr from-pink-50 via-rose-50 to-teal-50/40 select-none">
-      {/* Canvas interativo na camada intermediária acima do fundo */}
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
+    <div
+      className="relative flex flex-col min-h-screen w-full overflow-hidden select-none"
+      style={{
+        // Fundo: branco puro no centro, nuances rosadas nas bordas — luxo discreto
+        background: '#FFFFFF',
+      }}
+    >
+      {/* Orb 1 — aura rosa-quente, canto superior direito */}
+      <div
+        style={{
+          position: 'absolute',
+          top: -100,
+          right: -80,
+          width: 380,
+          height: 380,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(224,66,140,0.13) 0%, rgba(224,66,140,0.04) 55%, transparent 75%)',
+          filter: 'blur(1px)',
+          opacity: phase >= 1 ? 1 : 0,
+          transition: `opacity 1.4s ease`,
+          pointerEvents: 'none',
+        }}
+      />
 
-      {/* Auras luminosas respirando sutilmente */}
-      <div className="absolute w-[350px] h-[350px] rounded-full bg-pink-200/30 filter blur-3xl opacity-70 animate-pulse duration-[4000ms] pointer-events-none" />
-      <div className="absolute w-[250px] h-[250px] rounded-full bg-teal-100/30 filter blur-2xl opacity-60 animate-pulse duration-[6000ms] pointer-events-none" style={{ animationDelay: '1500ms' }} />
+      {/* Orb 2 — aura teal-suave, canto inferior esquerdo */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: -80,
+          left: -60,
+          width: 320,
+          height: 320,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(45,163,184,0.10) 0%, rgba(45,163,184,0.03) 55%, transparent 75%)',
+          filter: 'blur(1px)',
+          opacity: phase >= 1 ? 1 : 0,
+          transition: `opacity 1.8s ease 0.3s`,
+          pointerEvents: 'none',
+        }}
+      />
 
-      {/* Cartão Central Logo com Glassmorphism e Efeito de Vidro */}
-      <div className="flex flex-col items-center z-10 p-8 rounded-[3.5rem] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-[0_20px_50px_rgba(244,114,182,0.06)] max-w-[280px] transition-all duration-300 hover:scale-105">
-        
-        {/* Container da logo branca */}
-        <div className="w-36 h-36 rounded-[2.25rem] bg-white flex items-center justify-center shadow-xl shadow-pink-500/5 mb-6 p-4 animate-in zoom-in duration-500">
-          <img src="/logo01.svg" alt="Cuida e Amor" className="w-full h-full object-contain" />
+      {/* Orb central — claridade atrás do logo */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '28%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 260,
+          height: 260,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(224,66,140,0.08) 0%, transparent 70%)',
+          opacity: phase >= 1 ? 1 : 0,
+          transition: `opacity 1.2s ease`,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* ── ZONA SUPERIOR ─ marca discreta ── */}
+      <div
+        style={{
+          paddingTop: 64,
+          paddingLeft: 28,
+          paddingRight: 28,
+          opacity: phase >= 3 ? 1 : 0,
+          transition: `opacity 0.7s ease`,
+        }}
+      >
+        <span style={{
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'rgba(224,66,140,0.55)',
+          display: 'block',
+          textAlign: 'center',
+        }}>
+          Portal da Família
+        </span>
+      </div>
+
+      {/* ── ZONA CENTRAL — logo + identidade ── */}
+      <div
+        className="flex flex-col items-center justify-center flex-1"
+        style={{ paddingBottom: 60, gap: 0 }}
+      >
+        {/* Logo — grande, solto, SEM caixa */}
+        <div
+          style={{
+            opacity: phase >= 1 ? 1 : 0,
+            transform: phase >= 1 ? 'scale(1) translateY(0px)' : 'scale(0.88) translateY(20px)',
+            transition: `opacity 0.85s ${ease}, transform 0.85s ${ease}`,
+            marginBottom: 40,
+          }}
+        >
+          <img
+            src="/logo01.svg"
+            alt="Cuida e Amor"
+            style={{
+              width: 180,
+              height: 180,
+              objectFit: 'contain',
+              // Sombra suave difusa — eleva sem encaixotar
+              filter: 'drop-shadow(0px 12px 32px rgba(224,66,140,0.18)) drop-shadow(0px 2px 8px rgba(0,0,0,0.06))',
+            }}
+          />
         </div>
-        
-        {/* Dots animados */}
-        <div className="flex gap-2.5 items-center justify-center">
-          <div className="w-2.5 h-2.5 rounded-full bg-pink-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-          <div className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-          <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+
+        {/* Nome da marca */}
+        <div
+          style={{
+            opacity: phase >= 2 ? 1 : 0,
+            transform: phase >= 2 ? 'translateY(0)' : 'translateY(14px)',
+            transition: `opacity 0.7s ${ease}, transform 0.7s ${ease}`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          {/* Traço decorativo mínimo */}
+          <div style={{
+            width: 28,
+            height: 2,
+            borderRadius: 2,
+            background: 'linear-gradient(90deg, #E0428C, #2DA3B8)',
+            marginBottom: 10,
+          }} />
+
+          <span style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.20em',
+            textTransform: 'uppercase',
+            color: '#E0428C',
+          }}>
+            Home Care
+          </span>
+        </div>
+
+        {/* Tagline */}
+        <div
+          style={{
+            marginTop: 20,
+            opacity: phase >= 3 ? 1 : 0,
+            transform: phase >= 3 ? 'translateY(0)' : 'translateY(8px)',
+            transition: `opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s`,
+          }}
+        >
+          <span style={{
+            fontSize: 14,
+            fontWeight: 400,
+            color: '#94A3B8',
+            letterSpacing: '0.01em',
+            display: 'block',
+            textAlign: 'center',
+          }}>
+            Cuidado que conecta famílias
+          </span>
         </div>
       </div>
+
+      {/* ── ZONA INFERIOR — progresso ── */}
+      <div
+        style={{
+          paddingBottom: 48,
+          paddingLeft: 40,
+          paddingRight: 40,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 0,
+          opacity: phase >= 3 ? 1 : 0,
+          transition: 'opacity 0.5s ease 0.2s',
+        }}
+      >
+        {/* Trilha de progresso */}
+        <div style={{
+          width: '100%',
+          maxWidth: 120,
+          height: 2,
+          borderRadius: 2,
+          background: '#F1F5F9',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            height: '100%',
+            borderRadius: 2,
+            background: 'linear-gradient(90deg, #E0428C, #2DA3B8)',
+            animation: phase >= 3 ? 'progressFill 2.8s cubic-bezier(0.4,0,0.2,1) forwards' : undefined,
+          }} />
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes progressFill {
+          from { width: 0%; }
+          to   { width: 100%; }
+        }
+      `}</style>
     </div>
   );
 }

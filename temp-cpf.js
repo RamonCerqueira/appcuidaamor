@@ -1,7 +1,3 @@
-const { PrismaClient } = require('./src/generated/client');
-const prisma = new PrismaClient();
-async function main() {
-  const c = await prisma.cLIENTEs.findMany({ where: { CPF: { contains: '41991605' } } });
-  console.log('Clientes in DB:', c.map(cl => ({ CPF: cl.CPF, CodUsu: cl.CodUsu })));
-}
-main().catch(console.error).finally(() => prisma.$disconnect());
+// ⚠️ ARQUIVO PARA DELETAR — NUNCA COMMITAR
+// Este arquivo foi um script de debug temporário e não deve existir em produção.
+// DELETE-ME

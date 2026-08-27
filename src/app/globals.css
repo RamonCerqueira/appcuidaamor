@@ -1,34 +1,82 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-primary: #F472B6;
-  --color-brand-secondary: #2DD4BF;
-  --color-brand-accent: #FBBF24;
-  --color-brand-tertiary: #34D399;
-  --color-brand-background: #FCFCFD;
-  --color-brand-surface: #FFFFFF;
-  --color-brand-text: #3F3F46;
-  --color-brand-text-light: #71717A;
+  --color-brand-primary: #E0428C;
+  --color-brand-primary-dark: #B8286A;
+  --color-brand-primary-light: #F77CB4;
+  --color-brand-primary-soft: #FDF2F7;
   
-  --font-sans: var(--font-plus-jakarta), var(--font-outfit), "Inter", sans-serif;
+  --color-brand-secondary: #2DA3B8;
+  --color-brand-secondary-light: #6CC5D5;
+  --color-brand-secondary-soft: #F0F9FB;
+  
+  --color-brand-accent: #F59E0B;
+  --color-brand-accent-soft: #FFFBEB;
+  
+  --color-brand-success: #10B981;
+  --color-brand-success-soft: #ECFDF5;
+  
+  --color-brand-danger: #EF4444;
+  --color-brand-danger-soft: #FEF2F2;
+
+  --color-brand-background: #F8FAFC;
+  --color-brand-surface: #FFFFFF;
+  --color-brand-surface-muted: #F1F5F9;
+  --color-brand-border: #E2E8F0;
+  
+  --color-brand-text: #1E293B;
+  --color-brand-text-secondary: #475569;
+  --color-brand-text-muted: #94A3B8;
+  
+  --font-sans: var(--font-plus-jakarta), var(--font-outfit), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-display: var(--font-outfit), sans-serif;
 }
 
 @layer base {
+  *, ::before, ::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
   body {
     font-family: var(--font-sans);
-    background-color: var(--color-brand-background);
+    background-color: #0F172A; /* Escuro no desktop para destacar o mockup mobile */
     color: var(--color-brand-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Redução de movimento para acessibilidade */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-/* Utilitários para Scrollbar Invisível */
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
+/* Utilitários para Safe Area e Scrollbar */
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 16px);
 }
+
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

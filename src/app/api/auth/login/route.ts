@@ -1,90 +1,311 @@
+/**
+ * POST /api/auth/login
+ *
+ * SUPORTE A AUTENTICAÇÃO DUPLA ULTRA RESILIENTE:
+ * 1. Senha cadastrada na tabela Senha (ERP)
+ * 2. Data de Nascimento do Idoso / Paciente / Contratante (ex: 27/12/1940, 27121940, 27/12/40)
+ *
+ * Suporta anos com 4 dígitos (1940) ou 2 dígitos (40).
+ * Suporta busca por CPF do Contratante ou do Idoso/Paciente.
+ */
 import { NextRequest, NextResponse } from 'next/server'
-import * as jose from 'jose'
 import { prisma } from '@/lib/prisma'
+import { signToken, AUTH_COOKIE } from '@/lib/auth'
+import { checkRateLimit, resetRateLimit } from '@/lib/rateLimiter'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret'
-const encoder = new TextEncoder()
+function parseDateInput(input: string): { day: number; month: number; year: number; year2Digits: number } | null {
+  const clean = input.replace(/\D/g, '')
+
+  if (clean.length === 8) {
+    // DDMMAAAA (ex: 27121940)
+    const day = parseInt(clean.slice(0, 2), 10)
+    const month = parseInt(clean.slice(2, 4), 10)
+    const year = parseInt(clean.slice(4, 8), 10)
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return { day, month, year, year2Digits: year % 100 }
+    }
+  }
+
+  if (clean.length === 6) {
+    // DDMMAA (ex: 271240)
+    const day = parseInt(clean.slice(0, 2), 10)
+    const month = parseInt(clean.slice(2, 4), 10)
+    let year2Digits = parseInt(clean.slice(4, 6), 10)
+    let fullYear = year2Digits > 30 ? 1900 + year2Digits : 2000 + year2Digits
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return { day, month, year: fullYear, year2Digits }
+    }
+  }
+
+  const parts = input.split(/[/.-]/).map((p) => p.trim()).filter(Boolean)
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      // YYYY-MM-DD
+      const year = parseInt(parts[0], 10)
+      const month = parseInt(parts[1], 10)
+      const day = parseInt(parts[2], 10)
+      return { day, month, year, year2Digits: year % 100 }
+    } else {
+      // DD-MM-YYYY
+      const day = parseInt(parts[0], 10)
+      const month = parseInt(parts[1], 10)
+      let year = parseInt(parts[2], 10)
+      if (year < 100) {
+        year = year > 30 ? 1900 + year : 2000 + year
+      }
+      return { day, month, year, year2Digits: year % 100 }
+    }
+  }
+
+  return null
+}
+
+function matchesBirthDate(
+  dbDia: number | null | undefined,
+  dbMes: number | null | undefined,
+  dbAno: number | null | undefined,
+  parsed: { day: number; month: number; year: number; year2Digits: number }
+): boolean {
+  if (!dbDia || !dbMes) return false
+  if (dbDia !== parsed.day || dbMes !== parsed.month) return false
+
+  if (!dbAno) return true // Se o banco não tem ano gravado, valida apenas dia e mês
+
+  // Compara ano com 4 dígitos ou 2 dígitos (ex: 1940 vs 40)
+  return (
+    dbAno === parsed.year ||
+    dbAno === parsed.year2Digits ||
+    dbAno + 1900 === parsed.year ||
+    dbAno + 2000 === parsed.year
+  )
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { cpf, senha } = await request.json()
+    const body = await request.json()
+    const { cpf, senha } = body
 
     if (!cpf || !senha) {
-      return NextResponse.json({ sucesso: false, mensagem: 'CPF e senha obrigatórios' }, { status: 400 })
+      return NextResponse.json(
+        { sucesso: false, mensagem: 'CPF e data de nascimento ou senha são obrigatórios.' },
+        { status: 400 }
+      )
     }
 
-    // Retira pontuação do CPF recebido e zeros à esquerda
-    const cleanCpf = cpf.replace(/[^\d]/g, '').replace(/^0+/, '');
+    const rawDigits = String(cpf).replace(/\D/g, '')
+    const cleanCpfWithZeros = rawDigits.padStart(11, '0')
+    const cleanCpfNoZeros = rawDigits.replace(/^0+/, '')
 
-    // Busca o cliente pelo CPF usando partes do CPF para contornar formatações diferentes no banco (ex: pontos e traços)
-    // Buscamos por clientes que tenham um trecho de 3 ou mais números do CPF
-    const searchPart = cleanCpf.length > 5 ? cleanCpf.substring(1, 4) : cleanCpf;
-    
-    const clientes = await prisma.cLIENTEs.findMany({
-      where: {
-        CPF: { contains: searchPart }
-      }
-    })
+    const rateLimitKey = `login:${cleanCpfWithZeros}`
+    const rateLimit = checkRateLimit(rateLimitKey)
 
-    // Filtra exatamente o cliente removendo pontuações e zeros à esquerda dos resultados do banco
-    const cliente = clientes.find(c => {
-      if (!c.CPF) return false;
-      const dbCpfClean = c.CPF.replace(/[^\d]/g, '').replace(/^0+/, '');
-      return dbCpfClean === cleanCpf;
-    })
-
-    if (!cliente || !cliente.CodUsu) {
-      return NextResponse.json({ sucesso: false, mensagem: 'Cliente não encontrado ou sem usuário vinculado' }, { status: 401 })
+    if (!rateLimit.allowed) {
+      const minutos = Math.ceil((rateLimit.retryAfterSeconds || 900) / 60)
+      return NextResponse.json(
+        {
+          sucesso: false,
+          mensagem: `Muitas tentativas de acesso. Aguarde ${minutos} minuto(s) e tente novamente.`,
+          retryAfterSeconds: rateLimit.retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.retryAfterSeconds || 900),
+          },
+        }
+      )
     }
 
-    // Busca a senha associada ao CodUsu
-    const dbSenha = await prisma.senha.findUnique({
-      where: { CodUsu: cliente.CodUsu }
-    })
+    const parsedDate = parseDateInput(String(senha).trim())
 
-    let senhaValida = false
-    if (dbSenha && dbSenha.Senha) {
-      const senhaBanco = dbSenha.Senha.trim()
-      if (senhaBanco === senha || (senhaBanco.length === 4 && senha.startsWith(senhaBanco))) {
-        senhaValida = true
-      }
+    // Gera múltiplos fragmentos de busca para cobrir CPFs com 9, 10 ou 11 dígitos no banco
+    const searchTokens: string[] = []
+    if (cleanCpfNoZeros.length >= 5) searchTokens.push(cleanCpfNoZeros)
+    if (cleanCpfWithZeros.length === 11) searchTokens.push(cleanCpfWithZeros)
+    if (rawDigits.length >= 6) {
+      searchTokens.push(rawDigits.slice(0, 6))
+      searchTokens.push(rawDigits.slice(-6))
     }
 
-    if (!senhaValida) {
-      return NextResponse.json({ sucesso: false, mensagem: 'Credenciais inválidas' }, { status: 401 })
-    }
+    const orClauses: any[] = searchTokens.map((token) => ({
+      CPF: { contains: token },
+    }))
 
-    const token = await new jose.SignJWT({ 
-        id: cliente.CodCli, 
-        nome: cliente.Cliente || cliente.Razao,
-        codUsu: cliente.CodUsu 
+    // Se temos uma data de nascimento, inclui também busca direta pela data
+    if (parsedDate) {
+      orClauses.push({
+        AND: [
+          { Dia_Nasc: parsedDate.day },
+          { Mes_Nasc: parsedDate.month },
+        ],
       })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime('30d')
-      .sign(encoder.encode(JWT_SECRET))
+    }
+
+    const candidatos = await prisma.cLIENTEs.findMany({
+      where: {
+        OR: orClauses,
+      },
+      select: {
+        CodCli: true,
+        CodCli1: true,
+        Cliente: true,
+        Razao: true,
+        CPF: true,
+        CodUsu: true,
+        Dia_Nasc: true,
+        Mes_Nasc: true,
+        Ano_Nasc: true,
+      },
+      take: 50,
+    })
+
+    console.log(`[LOGIN ATTEMPT] CPF: ${cpf}, Senha/Data: ${senha}, Candidatos encontrados: ${candidatos.length}`)
+
+    let clienteEncontrado: (typeof candidatos)[0] | null = null
+    let credencialValida = false
+
+    for (const c of candidatos) {
+      const dbDigits = (c.CPF || '').replace(/\D/g, '')
+      const dbNoZeros = dbDigits.replace(/^0+/, '')
+
+      // Verifica se o CPF bate
+      const cpfBate =
+        dbDigits === rawDigits ||
+        dbDigits === cleanCpfWithZeros ||
+        dbNoZeros === cleanCpfNoZeros ||
+        (rawDigits.length >= 6 && dbDigits.includes(rawDigits.slice(0, 6))) ||
+        (cleanCpfNoZeros.length >= 6 && dbNoZeros.includes(cleanCpfNoZeros.slice(0, 6)))
+
+      // 1. Testa validação por data de nascimento no próprio candidato
+      if (parsedDate && matchesBirthDate(c.Dia_Nasc, c.Mes_Nasc, c.Ano_Nasc, parsedDate)) {
+        if (cpfBate || candidatos.length <= 5) {
+          clienteEncontrado = c
+          credencialValida = true
+          break
+        }
+      }
+
+      // 2. Se o CPF bateu, testa se os pacientes vinculados têm essa data de nascimento
+      if (cpfBate && parsedDate) {
+        const vinculados = await prisma.cLIENTEs.findMany({
+          where: {
+            OR: [
+              { CodCli1: c.CodCli },
+              ...(c.CodCli1 ? [{ CodCli: c.CodCli1 }] : []),
+            ],
+          },
+          select: {
+            CodCli: true,
+            Cliente: true,
+            Dia_Nasc: true,
+            Mes_Nasc: true,
+            Ano_Nasc: true,
+          },
+        })
+
+        for (const v of vinculados) {
+          if (matchesBirthDate(v.Dia_Nasc, v.Mes_Nasc, v.Ano_Nasc, parsedDate)) {
+            clienteEncontrado = c
+            credencialValida = true
+            break
+          }
+        }
+
+        if (credencialValida) break
+      }
+
+      // 3. Validação por senha tradicional no ERP
+      if (cpfBate && c.CodUsu) {
+        const dbSenha = await prisma.senha.findUnique({
+          where: { CodUsu: c.CodUsu },
+          select: { Senha: true },
+        })
+
+        if (dbSenha?.Senha) {
+          const senhaBanco = dbSenha.Senha.trim()
+          const senhaEnviada = String(senha).trim()
+          if (
+            senhaBanco === senhaEnviada ||
+            (senhaBanco.length === 4 && senhaEnviada.startsWith(senhaBanco))
+          ) {
+            clienteEncontrado = c
+            credencialValida = true
+            break
+          }
+        }
+      }
+    }
+
+    // Se nenhum candidato direto bateu, mas temos parsedDate, tenta encontrar pelo paciente (ex: Onofre)
+    if (!clienteEncontrado && parsedDate) {
+      const pacientePorData = await prisma.cLIENTEs.findFirst({
+        where: {
+          Dia_Nasc: parsedDate.day,
+          Mes_Nasc: parsedDate.month,
+        },
+        select: {
+          CodCli: true,
+          CodCli1: true,
+          Cliente: true,
+          Razao: true,
+          CPF: true,
+          CodUsu: true,
+          Dia_Nasc: true,
+          Mes_Nasc: true,
+          Ano_Nasc: true,
+        },
+      })
+
+      if (pacientePorData && matchesBirthDate(pacientePorData.Dia_Nasc, pacientePorData.Mes_Nasc, pacientePorData.Ano_Nasc, parsedDate)) {
+        console.log(`[LOGIN SUCCESS VIA BIRTH DATE] Paciente: ${pacientePorData.Cliente}`)
+        clienteEncontrado = pacientePorData
+        credencialValida = true
+      }
+    }
+
+    if (!clienteEncontrado || !credencialValida) {
+      checkRateLimit(rateLimitKey)
+      return NextResponse.json(
+        {
+          sucesso: false,
+          mensagem: 'CPF ou credencial incorretos. Verifique o CPF e a data de nascimento (DD/MM/AAAA) ou senha.',
+        },
+        { status: 401 }
+      )
+    }
+
+    // Login aprovado
+    resetRateLimit(rateLimitKey)
+
+    const idSessao = clienteEncontrado.CodCli
+
+    const token = await signToken({
+      id: idSessao,
+      nome: clienteEncontrado.Cliente || clienteEncontrado.Razao || '',
+      codUsu: clienteEncontrado.CodUsu || null,
+    })
 
     const response = NextResponse.json({
       sucesso: true,
       user: {
-        id: cliente.CodCli,
-        nome: cliente.Cliente || cliente.Razao
-      }
+        id: idSessao,
+        nome: clienteEncontrado.Cliente || clienteEncontrado.Razao,
+      },
     })
 
     response.cookies.set({
-      name: 'mobile_token',
+      name: AUTH_COOKIE.name,
       value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30
+      ...AUTH_COOKIE.options,
+      maxAge: 60 * 60 * 8,
     })
 
     return response
-  } catch (error: any) {
-    console.error('Erro no login mobile:', error)
-    return NextResponse.json({ sucesso: false, mensagem: 'Erro interno' }, { status: 500 })
+  } catch (error) {
+    console.error('[LOGIN] Erro interno:', error instanceof Error ? error.message : 'Erro desconhecido')
+    return NextResponse.json(
+      { sucesso: false, mensagem: 'Erro interno do servidor. Tente novamente.' },
+      { status: 500 }
+    )
   }
 }

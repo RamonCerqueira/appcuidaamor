@@ -2,24 +2,28 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 const slides = [
   {
     image: '/images/caregiver_black.png',
-    title: 'Cuidado Premium',
-    desc: 'Tenha o histórico médico, medicações e prontuário de saúde do seu ente querido sempre à mão.'
+    tag: 'Cuidado Contínuo',
+    title: 'Prontuário e Saúde Sempre à Mão',
+    desc: 'Acompanhe medicações, hábitos e evoluções clínicas do seu ente querido com total transparência.',
   },
   {
     image: '/images/caregivers_team.png',
-    title: 'Escalas em Tempo Real',
-    desc: 'Saiba exatamente qual cuidador(a) da Cuida e Amor estará de plantão a cada dia.'
+    tag: 'Equipe de Plantão',
+    title: 'Escalas Atualizadas em Tempo Real',
+    desc: 'Saiba exatamente quem está cuidando agora e os próximos profissionais escalados para o atendimento.',
   },
   {
     image: '/images/family_peace.png',
-    title: 'Gestão Descomplicada',
-    desc: 'Acesse faturas, escalas e solicite alterações na rotina diretamente pelo aplicativo.'
-  }
+    tag: 'Tranquilidade para a Família',
+    title: 'Gestão Completa e Descomplicada',
+    desc: 'Consulte faturas, emita 2ª via e envie solicitações de escala ou folga diretamente pelo aplicativo.',
+  },
 ];
 
 export default function Onboarding() {
@@ -42,20 +46,16 @@ export default function Onboarding() {
   const onTouchEndHandler = () => {
     if (!touchStart || !touchEnd) return;
     const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    
-    if (isLeftSwipe) {
+    if (distance > minSwipeDistance) {
       handleNext();
-    }
-    if (isRightSwipe) {
+    } else if (distance < -minSwipeDistance) {
       handlePrev();
     }
   };
 
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
-      setCurrentSlide(prev => prev + 1);
+      setCurrentSlide((prev) => prev + 1);
     } else {
       router.push('/login');
     }
@@ -63,88 +63,114 @@ export default function Onboarding() {
 
   const handlePrev = () => {
     if (currentSlide > 0) {
-      setCurrentSlide(prev => prev - 1);
+      setCurrentSlide((prev) => prev - 1);
     }
   };
 
   return (
-    <div 
-      className="w-full h-screen relative overflow-hidden flex flex-col justify-end bg-pink-50 select-none"
+    <div
+      className="w-full min-h-screen relative overflow-hidden flex flex-col justify-end bg-slate-900 select-none"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEndHandler}
     >
-      {/* Header Logo (Com gradiente no topo para garantir 100% de visibilidade sempre) */}
-      <div className="absolute top-0 left-0 w-full pt-12 pb-24 px-8 z-20 flex items-center gap-4 bg-gradient-to-b from-white/90 via-white/50 to-transparent animate-in fade-in duration-700">
-        <img src="/logo01.svg" alt="Cuida e Amor Logo" className="w-[100px] h-[100px] object-contain drop-shadow-xl" />
-        <span className="text-pink-600 font-black text-2xl tracking-tight drop-shadow-md uppercase">CUIDAR É AMAR!</span>
+      {/* Header com Logo e Pular */}
+      <div className="absolute top-0 left-0 w-full pt-10 px-6 z-20 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-sm border border-white/50">
+          <img src="/logo01.svg" alt="Cuida e Amor" className="w-6 h-6 object-contain" />
+          <span className="text-xs font-black text-[var(--color-brand-primary)] tracking-tight">CUIDA E AMOR</span>
+        </div>
+
+        <button
+          onClick={() => router.push('/login')}
+          className="text-xs font-bold text-white/90 bg-black/30 hover:bg-black/40 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 transition-colors cursor-pointer"
+        >
+          Pular
+        </button>
       </div>
 
-      {/* Background Image Full Screen with crossfade */}
+      {/* Imagem de Fundo em Tela Cheia com Crossfade */}
       {slides.map((slide, index) => (
-        <div 
+        <div
           key={index}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            index === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
         >
-          <img 
-            src={slide.image} 
-            alt={slide.title} 
-            className="w-full h-full object-cover object-top" 
+          <img
+            src={slide.image}
+            alt={slide.title}
+            className="w-full h-full object-cover object-top"
           />
         </div>
       ))}
 
-      {/* Beautiful Soft Pink Gradient Overlay (Lower 60%) */}
-      <div className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-pink-50 via-pink-50/90 to-transparent pointer-events-none" />
+      {/* Gradiente de transição para fundo claro */}
+      <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-t from-[var(--color-brand-background)] via-[var(--color-brand-background)]/95 to-transparent pointer-events-none" />
 
-      {/* Content Area */}
-      <div className="relative z-10 w-full max-w-[480px] mx-auto px-6 pb-12 flex flex-col items-center">
-        
-        {/* Texts */}
-        <div className="text-center mb-8 h-32 flex flex-col justify-end">
-          <h1 
+      {/* Área de Conteúdo */}
+      <div className="relative z-10 w-full px-6 pb-12 flex flex-col items-center">
+        {/* Badge da Etapa */}
+        <div className="bg-pink-50 border border-pink-100 text-[var(--color-brand-primary)] text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-3">
+          {slides[currentSlide].tag}
+        </div>
+
+        {/* Textos com transição */}
+        <div className="text-center mb-6 h-28 flex flex-col justify-center">
+          <h2
             key={`title-${currentSlide}`}
-            className="text-3xl font-extrabold text-slate-800 tracking-tight mb-3 animate-in slide-in-from-bottom-4 fade-in duration-700"
+            className="text-2xl font-black text-slate-800 tracking-tight mb-2 leading-tight animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             {slides[currentSlide].title}
-          </h1>
-          <p 
+          </h2>
+          <p
             key={`desc-${currentSlide}`}
-            className="text-slate-600 text-[15px] font-medium leading-relaxed max-w-[320px] mx-auto animate-in slide-in-from-bottom-4 fade-in duration-700 delay-100 fill-mode-both"
+            className="text-slate-600 text-xs font-medium leading-relaxed max-w-[320px] mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300 delay-75"
           >
             {slides[currentSlide].desc}
           </p>
         </div>
 
-        {/* Dots */}
-        <div className="flex gap-2.5 mb-10">
+        {/* Indicadores / Dots */}
+        <div className="flex gap-2 mb-8">
           {slides.map((_, i) => (
-            <div 
-              key={`dot-${i}`} 
-              className={`h-1.5 rounded-full transition-all duration-500 ${i === currentSlide ? 'w-8 bg-pink-400' : 'w-2 bg-pink-200'}`}
+            <button
+              key={`dot-${i}`}
+              onClick={() => setCurrentSlide(i)}
+              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                i === currentSlide
+                  ? 'w-8 bg-[var(--color-brand-primary)]'
+                  : 'w-2 bg-slate-300'
+              }`}
             />
           ))}
         </div>
 
-        {/* Action Button */}
-        <button 
+        {/* Botão de Avanço */}
+        <Button
+          variant="primary"
+          size="lg"
           onClick={handleNext}
-          className="w-full py-4 bg-pink-400 text-white rounded-2xl font-bold text-lg hover:bg-pink-500 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer shadow-xl shadow-pink-200"
+          className="w-full shadow-lg shadow-[var(--color-brand-primary)]/25"
+          rightIcon={
+            currentSlide === slides.length - 1 ? (
+              <ArrowRight size={18} />
+            ) : (
+              <ChevronRight size={18} />
+            )
+          }
         >
-          {currentSlide === slides.length - 1 ? 'Começar agora' : 'Próximo'}
-          {currentSlide < slides.length - 1 && <ChevronRight size={20} className="text-white" />}
-        </button>
+          {currentSlide === slides.length - 1 ? 'Acessar o Aplicativo' : 'Próximo'}
+        </Button>
 
-        {/* Skip button - always visible */}
-        <div className="mt-6 h-6 flex items-center justify-center">
-          <button 
+        <div className="mt-4">
+          <button
             onClick={() => router.push('/login')}
-            className="text-sm font-semibold text-slate-500 hover:text-pink-500 transition-colors cursor-pointer"
+            className="text-xs font-bold text-slate-500 hover:text-[var(--color-brand-primary)] transition-colors cursor-pointer"
           >
-            Já tenho conta
+            Já possui acesso? <span className="underline">Entrar com CPF</span>
           </button>
         </div>
-        
       </div>
     </div>
   );

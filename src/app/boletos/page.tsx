@@ -1,22 +1,35 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import Header from '@/components/Header';
-import { Copy, FileText, CheckCircle2, AlertCircle, Printer, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import {
+  Copy,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
+  CreditCard,
+  Receipt,
+} from 'lucide-react';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Toast } from '@/components/ui/Toast';
 
 export default function Boletos() {
   const [abertos, setAbertos] = useState<any[]>([]);
   const [historico, setHistorico] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/boletos')
       .then((res) => res.json())
       .then((json) => {
         if (json.sucesso) {
-          setAbertos(json.abertos);
-          setHistorico(json.historico);
+          setAbertos(json.abertos || []);
+          setHistorico(json.historico || []);
         }
         setLoading(false);
       })
@@ -25,10 +38,9 @@ export default function Boletos() {
 
   const handleCopyBarcode = () => {
     if (!boletoAtual?.LinhaDigitavel) return;
-    
     navigator.clipboard.writeText(boletoAtual.LinhaDigitavel);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+    setToastMessage('Linha digitável / Código PIX copiado com sucesso!');
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   const handleOpenPdf = () => {
@@ -36,130 +48,148 @@ export default function Boletos() {
     window.open(boletoAtual.LinkBoleto, '_blank');
   };
 
+  const boletoAtual = abertos.length > 0 ? abertos[0] : null;
+
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full relative pb-24 animate-pulse">
-        <Header title="Financeiro" />
-        <main className="flex-1 px-5 pt-6 flex flex-col gap-6">
-          <div className="h-48 bg-gray-200 rounded-[2rem]" />
-          <div className="h-64 bg-gray-200 rounded-[2rem]" />
+      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+        <Header title="Financeiro" subtitle="Faturas e Boletos" showBack />
+        <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
+          <Skeleton className="h-56 rounded-3xl" />
+          <Skeleton className="h-44 rounded-3xl" />
         </main>
       </div>
     );
   }
 
-  const boletoAtual = abertos.length > 0 ? abertos[0] : null;
-
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full relative pb-24">
-      <Header title="Financeiro" />
+    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+      <Header title="Financeiro" subtitle="Faturas e Boletos" showBack />
 
-      <main className="flex-1 px-5 pt-6 flex flex-col gap-8">
-        {/* Toast Notificação de Código Copiado */}
-        {copied && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[999] bg-green-600 text-white font-bold text-xs px-4 py-3 rounded-full shadow-lg flex items-center gap-2 animate-bounce">
-            <CheckCircle2 size={16} />
-            Código copiado com sucesso!
-          </div>
-        )}
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          type="success"
+          onClose={() => setToastMessage(null)}
+        />
+      )}
 
-        {/* Current Bill Card */}
+      <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
+        {/* Card da Fatura Atual */}
         {boletoAtual ? (
-          <div className="bg-gradient-to-br from-[var(--color-brand-primary)] to-[#c54982] rounded-[2rem] p-7 shadow-xl shadow-[var(--color-brand-primary)]/20 flex flex-col text-white relative overflow-hidden">
-            <div className="absolute top-[-20%] right-[-10%] w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <section className="bg-gradient-to-br from-[var(--color-brand-primary)] to-[#aa2261] rounded-3xl p-6 text-white shadow-xl shadow-[var(--color-brand-primary)]/20 relative overflow-hidden flex flex-col gap-4">
+            <div className="absolute right-[-10%] top-[-20%] w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-extrabold tracking-widest text-white/80 uppercase">
-                Fatura Atual
+            <div className="flex items-center justify-between relative z-10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/80">
+                Fatura Atual em Aberto
               </span>
-              <span className="bg-white/20 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm border border-white/10">
-                Aberto
+              <span className="bg-white/20 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-white/20 backdrop-blur-md uppercase">
+                Aguardando Pagamento
               </span>
             </div>
 
-            <h2 className="text-4xl font-extrabold mt-3 tracking-tight">
-              R$ {boletoAtual.Valor?.toFixed(2).replace('.', ',') || '0,00'}
-            </h2>
-
-            <div className="flex items-center gap-2 mt-4 text-white/90 text-xs font-medium bg-black/10 w-fit px-3 py-1.5 rounded-full border border-white/5">
-              <AlertCircle size={14} className="text-[var(--color-brand-accent)]" /> Vence em{' '}
-              {new Date(boletoAtual.Vencimento).toLocaleDateString('pt-BR')}
+            <div className="flex flex-col relative z-10">
+              <span className="text-3xl font-black tracking-tight text-white">
+                R$ {boletoAtual.Valor?.toFixed(2).replace('.', ',') || '0,00'}
+              </span>
+              <div className="flex items-center gap-1.5 mt-2 text-xs font-semibold text-white/90 bg-black/15 px-3 py-1 rounded-full w-fit border border-white/10">
+                <AlertCircle size={14} className="text-amber-300" />
+                <span>
+                  Vencimento em{' '}
+                  {new Date(boletoAtual.Vencimento).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
             </div>
 
-            <div className="flex gap-3 mt-8 z-10">
-              <button
+            <div className="grid grid-cols-2 gap-3 pt-2 relative z-10">
+              <Button
+                variant="outline"
+                size="md"
                 onClick={handleCopyBarcode}
                 disabled={!boletoAtual.LinhaDigitavel}
-                className="flex-1 bg-white text-[var(--color-brand-primary)] disabled:opacity-50 hover:bg-gray-50 transition-colors rounded-xl py-3.5 flex items-center justify-center gap-2 text-sm font-bold shadow-md active:scale-95 transition-transform cursor-pointer"
+                leftIcon={<Copy size={16} />}
+                className="bg-white text-slate-800 hover:bg-slate-50 border-white shadow-sm"
               >
-                <Copy size={16} />
                 Copiar Código
-              </button>
-              <button
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="md"
                 onClick={handleOpenPdf}
                 disabled={!boletoAtual.LinkBoleto}
-                className="flex-1 bg-black/20 disabled:opacity-50 hover:bg-black/30 backdrop-blur-md transition-colors rounded-xl py-3.5 flex items-center justify-center gap-2 text-sm font-bold border border-white/10 active:scale-95 transition-transform cursor-pointer"
+                leftIcon={<FileText size={16} />}
+                className="bg-white/15 hover:bg-white/25 text-white border border-white/20"
               >
-                <FileText size={16} />
-                Ver PDF
-              </button>
+                Ver Boleto PDF
+              </Button>
             </div>
-          </div>
+          </section>
         ) : (
-          <div className="bg-white rounded-[2rem] p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 flex flex-col items-center justify-center text-center py-10">
-            <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-green-500 mb-4">
-              <CheckCircle2 size={32} />
+          <section className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs flex flex-col items-center justify-center text-center gap-3 py-8">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 mb-1">
+              <CheckCircle2 size={28} />
             </div>
-            <h3 className="font-extrabold text-[var(--color-brand-text)] text-xl">Tudo em dia!</h3>
-            <p className="text-sm text-[var(--color-brand-text-light)] mt-2">
-              Você não possui faturas abertas no momento.
+            <h3 className="text-base font-black text-slate-800">
+              Tudo em Dia!
+            </h3>
+            <p className="text-xs text-slate-500 font-medium max-w-[260px] leading-relaxed">
+              Você não possui cobranças ou faturas em aberto no momento.
             </p>
-          </div>
+          </section>
         )}
 
-        {/* History */}
-        <section className="flex flex-col gap-3">
-          <h3 className="text-xs font-extrabold text-gray-400 tracking-widest uppercase px-1">
+        {/* Histórico de Faturas Pagas */}
+        <section className="flex flex-col gap-2.5">
+          <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 px-1">
             Histórico de Pagamentos
-          </h3>
+          </span>
 
-          <div className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 flex flex-col overflow-hidden">
+          <div className="flex flex-col gap-3">
             {historico.length > 0 ? (
-              historico.map((item: any, i: number) => (
-                <div
-                  key={i}
-                  className="p-5 flex items-center justify-between border-b border-gray-50 hover:bg-gray-50/50 transition-colors last:border-b-0"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 border border-green-100">
-                      <CheckCircle2 size={24} strokeWidth={1.5} />
+              historico.map((item: any, i: number) => {
+                const dataVenc = new Date(item.Vencimento);
+                const mesAno = dataVenc.toLocaleDateString('pt-BR', {
+                  month: 'long',
+                  year: 'numeric',
+                });
+
+                return (
+                  <div
+                    key={i}
+                    className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shrink-0">
+                        <CheckCircle2 size={20} />
+                      </div>
+                      <div className="flex flex-col">
+                        <h4 className="text-sm font-black text-slate-800 capitalize tracking-tight">
+                          {mesAno}
+                        </h4>
+                        <span className="text-xs text-slate-500 font-medium mt-0.5">
+                          R${' '}
+                          {item.ValorPago?.toFixed(2).replace('.', ',') ||
+                            item.Valor?.toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-col">
-                      <h4 className="text-sm font-extrabold text-[var(--color-brand-text)]">
-                        {new Date(item.Vencimento).toLocaleDateString('pt-BR', {
-                          month: 'long',
-                          year: 'numeric',
-                        })}
-                      </h4>
-                      <p className="text-xs text-[var(--color-brand-text-light)] mt-0.5 font-medium">
-                        Pago • R${' '}
-                        {item.ValorPago?.toFixed(2).replace('.', ',') ||
-                          item.Valor?.toFixed(2).replace('.', ',')}
-                      </p>
-                    </div>
+
+                    <StatusBadge status="Pago" />
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
-              <div className="p-8 text-center text-sm font-bold text-gray-400">
-                Nenhum pagamento registrado.
-              </div>
+              <EmptyState
+                icon={Receipt}
+                title="Sem Histórico Financeiro"
+                description="Os comprovantes e faturas quitadas serão exibidos nesta área."
+              />
             )}
           </div>
         </section>
       </main>
-
-      {/* O Modal antigo foi removido pois a Caixa abrirá o PDF original no botão */}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const token = request.cookies.get('mobile_token')?.value;
   const path = request.nextUrl.pathname;
 
@@ -36,9 +36,6 @@ export function proxy(request: NextRequest) {
 
   return NextResponse.next();
 }
-
-// Mantém compatibilidade caso a versão aceite middleware como export
-export const middleware = proxy;
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],

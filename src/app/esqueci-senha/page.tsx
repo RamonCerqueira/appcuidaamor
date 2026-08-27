@@ -2,71 +2,102 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, ArrowLeft } from 'lucide-react';
+import { User, ArrowLeft, KeyRound } from 'lucide-react';
 import Link from 'next/link';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
 export default function EsqueciSenha() {
   const [cpf, setCpf] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+
+    if (value.length > 9) {
+      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`;
+    } else if (value.length > 6) {
+      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`;
+    } else if (value.length > 3) {
+      value = `${value.slice(0, 3)}.${value.slice(3)}`;
+    }
+
+    setCpf(value);
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simula a requisição de envio de e-mail com token
+
     setTimeout(() => {
-      console.log('--- SIMULAÇÃO DE ENVIO DE E-MAIL ---');
-      console.log(`Token de recuperação: 749205`);
-      console.log('------------------------------------');
       setIsLoading(false);
       router.push('/verificacao');
-    }, 1500);
+    }, 1200);
   };
 
   return (
-    <div className="flex flex-col min-h-[100vh] bg-[var(--color-brand-background)] w-full px-6 pt-10">
-      
-      <Link href="/login" className="w-10 h-10 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center text-gray-500 hover:text-[var(--color-brand-primary)] transition-colors active:scale-95 mb-8">
-        <ArrowLeft size={20} />
-      </Link>
+    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full px-6 pt-10 pb-8 justify-between">
+      <div>
+        {/* Top bar */}
+        <div className="flex items-center justify-between mb-8">
+          <Link
+            href="/login"
+            className="w-10 h-10 rounded-full bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-slate-600 hover:text-[var(--color-brand-primary)] active:scale-95 transition-all"
+          >
+            <ArrowLeft size={18} strokeWidth={2.5} />
+          </Link>
+          <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+            Etapa 1 de 3
+          </span>
+        </div>
 
-      <div className="flex flex-col flex-1 pb-10 max-w-[400px] mx-auto w-full">
-        <h1 className="text-3xl font-extrabold text-[var(--color-brand-text)] mb-3 tracking-tight">Qual seu CPF?</h1>
-        <p className="text-[var(--color-brand-text-light)] text-sm mb-8 leading-relaxed">
-          Para garantir sua segurança, precisamos identificar seu cadastro. Enviaremos um código para o e-mail registrado.
-        </p>
-
-        <form onSubmit={handleSend} className="w-full flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-[var(--color-brand-text)] ml-1 uppercase tracking-wider">CPF do Responsável</label>
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <User size={18} className="text-gray-400 group-focus-within:text-[var(--color-brand-primary)] transition-colors" />
-              </div>
-              <input 
-                type="text" 
-                placeholder="000.000.000-00" 
-                className="w-full pl-11 pr-4 py-4 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)] focus:border-transparent transition-all bg-white text-base shadow-sm"
-                value={cpf}
-                onChange={(e) => setCpf(e.target.value)}
-                required
-              />
-            </div>
+        <div className="flex flex-col max-w-[380px] mx-auto">
+          <div className="w-14 h-14 rounded-2xl bg-pink-50 text-[var(--color-brand-primary)] flex items-center justify-center border border-pink-100 mb-4">
+            <KeyRound size={26} strokeWidth={2} />
           </div>
 
-          <button 
-            type="submit" 
-            disabled={isLoading || cpf.length < 11}
-            className="w-full py-4 mt-6 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/90 text-white rounded-2xl font-bold text-lg shadow-lg shadow-[var(--color-brand-primary)]/30 transition-all active:scale-95 flex justify-center items-center disabled:opacity-50 disabled:active:scale-100"
-          >
-            {isLoading ? (
-              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              'Avançar'
-            )}
-          </button>
-        </form>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight mb-1">
+            Recuperação de Acesso
+          </h1>
+          <p className="text-xs text-slate-500 font-medium leading-relaxed mb-6">
+            Informe o CPF do titular contratante para enviarmos o código de autenticação por e-mail.
+          </p>
+
+          <form onSubmit={handleSend} className="flex flex-col gap-4">
+            <Input
+              label="CPF do Contratante"
+              type="text"
+              inputMode="numeric"
+              placeholder="000.000.000-00"
+              value={cpf}
+              onChange={handleCpfChange}
+              required
+              leftIcon={<User size={18} />}
+            />
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              isLoading={isLoading}
+              disabled={cpf.replace(/\D/g, '').length < 11}
+              className="mt-4 shadow-md shadow-[var(--color-brand-primary)]/20"
+            >
+              Enviar Código de Verificação
+            </Button>
+          </form>
+        </div>
+      </div>
+
+      <div className="text-center">
+        <Link
+          href="/login"
+          className="text-xs font-bold text-slate-500 hover:text-slate-700"
+        >
+          Lembrou sua senha? <span className="text-[var(--color-brand-primary)] underline">Voltar para o login</span>
+        </Link>
       </div>
     </div>
   );

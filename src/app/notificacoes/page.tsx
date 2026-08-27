@@ -1,68 +1,119 @@
 'use client';
 
+import React from 'react';
 import Header from '@/components/Header';
-import { BellRing, CreditCard, CalendarClock, ShieldAlert } from 'lucide-react';
+import {
+  CreditCard,
+  CalendarCheck,
+  ShieldAlert,
+  Bell,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+} from 'lucide-react';
+import Link from 'next/link';
 
 export default function Notificacoes() {
+  const notificacoes = [
+    {
+      id: 1,
+      tipo: 'financeiro',
+      titulo: 'Fatura Mensal Disponível',
+      descricao: 'A fatura referente aos serviços prestados já está disponível para consulta e quitação.',
+      horario: 'Há 2 horas',
+      link: '/boletos',
+      lida: false,
+    },
+    {
+      id: 2,
+      tipo: 'escala',
+      titulo: 'Escala Confirmada',
+      descricao: 'O plantão da cuidadora Ana Paula foi confirmado para amanhã às 07:00.',
+      horario: 'Há 5 horas',
+      link: '/escala',
+      lida: false,
+    },
+    {
+      id: 3,
+      tipo: 'geral',
+      titulo: 'Boletim de Saúde Mensal',
+      descricao: 'A avaliação médica mensal do paciente foi registrada e atualizada no prontuário.',
+      horario: 'Ontem às 16:30',
+      link: '/quadro',
+      lida: true,
+    },
+  ];
+
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full relative pb-24">
-      <Header title="Notificações" showNotificationDot={false} />
+    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+      <Header
+        title="Notificações"
+        subtitle="Comunicados"
+        showBack
+        showNotificationDot={false}
+      />
 
-      <main className="flex-1 px-5 pt-6 flex flex-col gap-6">
-        
-        <section className="flex flex-col gap-3">
-          <h3 className="text-[11px] font-bold text-gray-400 tracking-wider uppercase ml-1">Hoje</h3>
-          
-          <div className="flex flex-col gap-3">
-            <div className="bg-white rounded-2xl p-4 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] border border-gray-100/50 flex gap-4 items-start relative overflow-hidden">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-brand-accent)]" />
-              <div className="w-10 h-10 rounded-full bg-[var(--color-brand-accent)]/10 flex items-center justify-center shrink-0 mt-0.5">
-                <CreditCard size={20} className="text-[var(--color-brand-accent)]" />
-              </div>
-              <div className="flex flex-col">
-                <h4 className="text-sm font-bold text-[var(--color-brand-text)]">Boleto disponível</h4>
-                <p className="text-xs text-[var(--color-brand-text-light)] mt-1 leading-relaxed">
-                  O boleto referente aos serviços de Maio/2025 já está disponível para pagamento.
-                </p>
-                <span className="text-[10px] font-semibold text-gray-400 mt-2">Há 2 horas</span>
-              </div>
-            </div>
+      <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+            Recentes
+          </span>
+          <span className="text-xs font-bold text-[var(--color-brand-primary)]">
+            3 comunicados
+          </span>
+        </div>
 
-            <div className="bg-white rounded-2xl p-4 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] border border-gray-100/50 flex gap-4 items-start relative overflow-hidden">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-brand-secondary)]" />
-              <div className="w-10 h-10 rounded-full bg-[var(--color-brand-secondary)]/10 flex items-center justify-center shrink-0 mt-0.5">
-                <CalendarClock size={20} className="text-[var(--color-brand-secondary)]" />
-              </div>
-              <div className="flex flex-col">
-                <h4 className="text-sm font-bold text-[var(--color-brand-text)]">Alteração de Escala</h4>
-                <p className="text-xs text-[var(--color-brand-text-light)] mt-1 leading-relaxed">
-                  A cuidadora Ana Souza confirmou o plantão de amanhã (21/05) às 07:00.
-                </p>
-                <span className="text-[10px] font-semibold text-gray-400 mt-2">Há 5 horas</span>
-              </div>
-            </div>
-          </div>
-        </section>
+        <div className="flex flex-col gap-3">
+          {notificacoes.map((item) => {
+            const isFin = item.tipo === 'financeiro';
+            const isEsc = item.tipo === 'escala';
 
-        <section className="flex flex-col gap-3 mt-4">
-          <h3 className="text-[11px] font-bold text-gray-400 tracking-wider uppercase ml-1">Ontem</h3>
-          
-          <div className="flex flex-col gap-3">
-            <div className="bg-white rounded-2xl p-4 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] border border-gray-100/50 flex gap-4 items-start relative overflow-hidden opacity-70">
-              <div className="w-10 h-10 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center shrink-0 mt-0.5">
-                <ShieldAlert size={20} className="text-[var(--color-brand-primary)]" />
-              </div>
-              <div className="flex flex-col">
-                <h4 className="text-sm font-bold text-[var(--color-brand-text)]">Aviso da Agência</h4>
-                <p className="text-xs text-[var(--color-brand-text-light)] mt-1 leading-relaxed">
-                  Lembramos que o recesso de fim de ano já pode ter as escalas pré-agendadas pelo app.
-                </p>
-                <span className="text-[10px] font-semibold text-gray-400 mt-2">19 Mai 2025</span>
-              </div>
-            </div>
-          </div>
-        </section>
+            const icon = isFin ? (
+              <CreditCard size={20} className="text-amber-600" />
+            ) : isEsc ? (
+              <CalendarCheck size={20} className="text-cyan-600" />
+            ) : (
+              <Sparkles size={20} className="text-[var(--color-brand-primary)]" />
+            );
 
+            const iconBg = isFin
+              ? 'bg-amber-50 border-amber-100'
+              : isEsc
+              ? 'bg-cyan-50 border-cyan-100'
+              : 'bg-pink-50 border-pink-100';
+
+            return (
+              <Link
+                key={item.id}
+                href={item.link}
+                className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs flex items-start gap-3.5 hover:border-pink-100 active:scale-[0.99] transition-all relative overflow-hidden group"
+              >
+                {!item.lida && (
+                  <span className="absolute top-4 right-4 w-2 h-2 rounded-full bg-[var(--color-brand-primary)]" />
+                )}
+
+                <div
+                  className={`w-11 h-11 rounded-2xl ${iconBg} border flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform mt-0.5`}
+                >
+                  {icon}
+                </div>
+
+                <div className="flex flex-col flex-1 pr-3">
+                  <h4 className="text-sm font-black text-slate-800 tracking-tight leading-snug">
+                    {item.titulo}
+                  </h4>
+                  <p className="text-xs text-slate-600 font-medium leading-relaxed mt-1">
+                    {item.descricao}
+                  </p>
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 mt-2">
+                    <Clock size={11} />
+                    <span>{item.horario}</span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </main>
     </div>
   );

@@ -1,11 +1,25 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import Header from '@/components/Header';
-import { ChevronLeft, ChevronRight, FileText, Calendar as CalendarIcon, List, User } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  List,
+  Clock,
+  User,
+  ClipboardList,
+  CalendarCheck2,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Avatar } from '@/components/ui/Avatar';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Button } from '@/components/ui/Button';
 
-// Funções utilitárias para o calendário
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
 }
@@ -14,21 +28,31 @@ function getFirstDayOfMonth(year: number, month: number) {
   return new Date(year, month, 1).getDay();
 }
 
-const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const MONTH_NAMES = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+];
+
 const DAY_NAMES = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
 export default function Escala() {
   const [escalas, setEscalas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
-  
   const [responsavel, setResponsavel] = useState('Família Silva');
   const [iniciais, setIniciais] = useState('FS');
-  
-  // Plantão Selecionado no Calendário
-  const [selectedDate, setSelectedDate] = useState<number | null>(new Date().getDate());
+  const [selectedDayPlantao, setSelectedDayPlantao] = useState<any | null>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -36,10 +60,10 @@ export default function Escala() {
   useEffect(() => {
     setLoading(true);
     fetch(`/api/escala?year=${year}&month=${month}`)
-      .then(res => res.json())
-      .then(json => {
+      .then((res) => res.json())
+      .then((json) => {
         if (json.sucesso) {
-          setEscalas(json.plantoes);
+          setEscalas(json.plantoes || []);
           if (json.responsavel) setResponsavel(json.responsavel);
           if (json.iniciais) setIniciais(json.iniciais);
         }
@@ -50,188 +74,282 @@ export default function Escala() {
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
-    setSelectedDate(null);
-  }
+  };
 
   const handleNextMonth = () => {
     setCurrentDate(new Date(year, month + 1, 1));
-    setSelectedDate(null);
-  }
+  };
 
-  // Montando o calendário
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
-  
   const blanks = Array(firstDay).fill(null);
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const calendarCells = [...blanks, ...days];
 
-  // Helper: Busca plantão para um dia específico
   const getPlantaoForDay = (day: number) => {
-    return escalas.find(e => {
+    return escalas.find((e) => {
       const d = new Date(e.data);
-      return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+      return (
+        d.getDate() === day &&
+        d.getMonth() === month &&
+        d.getFullYear() === year
+      );
     });
-  }
+  };
 
-  const plantaoSelecionado = selectedDate ? getPlantaoForDay(selectedDate) : null;
+  const handleDayClick = (day: number) => {
+    const plantao = getPlantaoForDay(day);
+    if (plantao) {
+      setSelectedDayPlantao({ ...plantao, dayNumber: day });
+    }
+  };
 
   if (loading && escalas.length === 0) {
     return (
-      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full relative pb-24">
-        <Header title="Escala Mensal" />
-        <main className="flex-1 px-5 pt-6 flex flex-col gap-6 animate-pulse">
-          <div className="h-40 bg-gray-200 rounded-[2rem]" />
-          <div className="h-64 bg-gray-200 rounded-[2rem]" />
+      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+        <Header title="Escala Mensal" showBack />
+        <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
+          <Skeleton className="h-12 rounded-full" />
+          <Skeleton className="h-80 rounded-3xl" />
         </main>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full relative pb-24">
-      <Header title="Escala Mensal" subtitle={responsavel} userInitials={iniciais} />
+    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+      <Header
+        title="Escala Mensal"
+        subtitle={responsavel}
+        userInitials={iniciais}
+        userName={responsavel}
+        showBack
+      />
 
-      <main className="flex-1 px-5 pt-6 flex flex-col gap-6">
-        
-        {/* Nav e Toggles */}
-        <div className="flex justify-between items-center bg-white rounded-full p-1.5 shadow-sm border border-pink-50">
-          <div className="flex bg-gray-50 rounded-full p-1 w-full max-w-[140px]">
-            <button 
-              onClick={() => setViewMode('calendar')}
-              className={`flex-1 flex justify-center py-2 rounded-full transition-all ${viewMode === 'calendar' ? 'bg-white shadow-sm text-pink-500' : 'text-gray-400'}`}
+      <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
+        {/* Controles de Mês e Toggle Calendário/Lista */}
+        <div className="flex items-center justify-between bg-white rounded-2xl p-2 border border-slate-100 shadow-xs">
+          {/* Navegação de Mês */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handlePrevMonth}
+              className="w-8 h-8 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <CalendarIcon size={16} />
+              <ChevronLeft size={16} strokeWidth={2.5} />
             </button>
-            <button 
-              onClick={() => setViewMode('list')}
-              className={`flex-1 flex justify-center py-2 rounded-full transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-pink-500' : 'text-gray-400'}`}
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wider px-2 min-w-[120px] text-center">
+              {MONTH_NAMES[month]} {year}
+            </span>
+            <button
+              onClick={handleNextMonth}
+              className="w-8 h-8 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <List size={16} />
+              <ChevronRight size={16} strokeWidth={2.5} />
             </button>
           </div>
 
-          <div className="flex items-center gap-2 pr-2">
-            <button onClick={handlePrevMonth} className="w-8 h-8 flex items-center justify-center rounded-full bg-pink-50 text-pink-500 hover:bg-pink-100 active:scale-95 transition-all">
-              <ChevronLeft size={16} />
+          {/* Toggle View Mode */}
+          <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === 'calendar'
+                  ? 'bg-white text-[var(--color-brand-primary)] shadow-xs'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <CalendarIcon size={16} strokeWidth={2.5} />
             </button>
-            <span className="text-xs font-bold text-[var(--color-brand-text)] w-24 text-center uppercase tracking-widest">
-              {MONTH_NAMES[month]} {year}
-            </span>
-            <button onClick={handleNextMonth} className="w-8 h-8 flex items-center justify-center rounded-full bg-pink-50 text-pink-500 hover:bg-pink-100 active:scale-95 transition-all">
-              <ChevronRight size={16} />
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-white text-[var(--color-brand-primary)] shadow-xs'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <List size={16} strokeWidth={2.5} />
             </button>
           </div>
         </div>
 
+        {/* MODO CALENDÁRIO */}
         {viewMode === 'calendar' && (
-          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Calendar UI */}
-            <div className="bg-white rounded-[2rem] p-6 shadow-xl shadow-pink-100/40 border border-pink-50">
-              <div className="grid grid-cols-7 gap-1 mb-4">
-                {DAY_NAMES.map((d, i) => (
-                  <div key={i} className="text-center text-[10px] font-extrabold text-gray-400">{d}</div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-y-3 gap-x-1">
-                {calendarCells.map((day, i) => {
-                  if (!day) return <div key={i} />;
-                  
-                  const isSelected = day === selectedDate;
-                  const plantao = getPlantaoForDay(day);
-                  const hasPlantao = !!plantao;
-
-                  return (
-                    <div key={i} className="flex justify-center">
-                      <button 
-                        onClick={() => setSelectedDate(day)}
-                        className={`
-                          relative w-10 h-10 flex items-center justify-center rounded-full text-sm font-bold transition-all
-                          ${isSelected ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/30' : 
-                            hasPlantao ? 'bg-pink-50 text-pink-500 hover:bg-pink-100' : 'text-gray-400 hover:bg-gray-50'}
-                        `}
-                      >
-                        {day}
-                        {hasPlantao && !isSelected && (
-                          <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-pink-500" />
-                        )}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+          <section className="bg-white rounded-3xl p-5 border border-slate-100 shadow-xs flex flex-col gap-4 animate-in fade-in duration-200">
+            {/* Header Dias da Semana */}
+            <div className="grid grid-cols-7 gap-1">
+              {DAY_NAMES.map((d, i) => (
+                <span
+                  key={i}
+                  className="text-center text-[10px] font-black uppercase text-slate-400 py-1"
+                >
+                  {d}
+                </span>
+              ))}
             </div>
 
-            {/* Selected Date Details */}
-            {selectedDate && (
-              <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm flex flex-col">
-                <h3 className="text-[10px] font-extrabold text-gray-400 tracking-widest uppercase mb-4">
-                  Plantão do dia {String(selectedDate).padStart(2, '0')}/{String(month + 1).padStart(2, '0')}
-                </h3>
-                
-                {plantaoSelecionado ? (
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-pink-50 rounded-full flex items-center justify-center text-pink-500 border border-pink-100">
-                      <User size={24} />
-                    </div>
-                    <div className="flex flex-col">
-                      <h4 className="text-sm font-extrabold text-[var(--color-brand-text)] uppercase">{plantaoSelecionado.cuidador}</h4>
-                      <p className="text-xs text-gray-400 mt-0.5 font-bold">{plantaoSelecionado.horaInicio} às {plantaoSelecionado.horaSaida}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4 text-xs font-bold text-gray-400">
-                    Nenhum plantão agendado.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+            {/* Grid dos Dias */}
+            <div className="grid grid-cols-7 gap-y-2.5 gap-x-1">
+              {calendarCells.map((day, idx) => {
+                if (!day) return <div key={idx} />;
 
-        {viewMode === 'list' && (
-          <section className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h3 className="text-[10px] font-extrabold text-gray-400 tracking-widest uppercase px-1">Registros do Mês</h3>
-            
-            <div className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-pink-50 flex flex-col overflow-hidden">
-              
-              {escalas.length > 0 ? escalas.map((escala: any, index: number) => {
-                const dateObj = new Date(escala.data);
-                const dataFormatada = !isNaN(dateObj.getTime()) ? `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}` : '';
+                const plantao = getPlantaoForDay(day);
+                const hasPlantao = !!plantao;
 
                 return (
-                  <div key={index} className={`p-5 flex flex-col border-b border-gray-50 hover:bg-pink-50/30 transition-colors`}>
-                    <div className="flex items-center gap-4">
-                      <div className="flex flex-col items-center justify-center w-12 h-12 bg-pink-50 rounded-2xl border border-pink-100 shrink-0">
-                         <span className="text-[10px] text-pink-400 font-bold uppercase">{DAY_NAMES[dateObj.getDay()]}</span>
-                         <span className="text-base font-extrabold text-pink-500 leading-none">{String(dateObj.getDate()).padStart(2, '0')}</span>
-                      </div>
-                      <div className="flex flex-col flex-1">
-                        <h4 className="text-xs font-extrabold text-[var(--color-brand-text)] uppercase tracking-tight">{escala.cuidador}</h4>
-                        <p className="text-[10px] text-gray-400 mt-1 font-bold">{escala.horaInicio} – {escala.horaSaida}</p>
-                      </div>
-                      <div className="bg-green-50 text-green-600 text-[9px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider border border-green-100 shrink-0">
-                        {escala.status}
-                      </div>
-                    </div>
+                  <div key={idx} className="flex justify-center">
+                    <button
+                      onClick={() => handleDayClick(day)}
+                      disabled={!hasPlantao}
+                      className={`relative w-10 h-10 rounded-2xl flex flex-col items-center justify-center font-bold text-xs transition-all ${
+                        hasPlantao
+                          ? 'bg-pink-50 text-[var(--color-brand-primary)] border border-pink-100 hover:bg-pink-100/70 hover:scale-105 active:scale-95 cursor-pointer shadow-xs'
+                          : 'text-slate-400 bg-transparent'
+                      }`}
+                    >
+                      <span>{day}</span>
+                      {hasPlantao && (
+                        <span className="w-1 h-1 rounded-full bg-[var(--color-brand-primary)] mt-0.5" />
+                      )}
+                    </button>
                   </div>
                 );
-              }) : (
-                <div className="p-8 text-center text-xs font-bold text-gray-400">
-                  Nenhum plantão localizado neste mês.
-                </div>
-              )}
+              })}
+            </div>
 
+            <div className="flex items-center justify-center gap-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500 font-medium">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-pink-100 border border-pink-300" />
+                <span>Dia com plantão</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                <span>Sem atendimento</span>
+              </div>
             </div>
           </section>
         )}
 
-        <Link href="/pedidos" className="w-full py-4 mt-2 bg-white text-[var(--color-brand-text)] rounded-[1.5rem] font-bold border border-gray-100 shadow-sm flex justify-center items-center gap-2 hover:bg-gray-50 active:scale-95 transition-all text-sm">
-          <FileText size={18} className="text-pink-400" />
-          Solicitar alteração na escala
-        </Link>
+        {/* MODO LISTA */}
+        {viewMode === 'list' && (
+          <section className="flex flex-col gap-3 animate-in fade-in duration-200">
+            {escalas.length > 0 ? (
+              escalas.map((escala: any, index: number) => {
+                const dateObj = new Date(escala.data);
+                const diaFormatado = String(dateObj.getDate()).padStart(2, '0');
+                const diaSemana = DAY_NAMES[dateObj.getDay()];
 
+                return (
+                  <div
+                    key={index}
+                    onClick={() =>
+                      setSelectedDayPlantao({
+                        ...escala,
+                        dayNumber: dateObj.getDate(),
+                      })
+                    }
+                    className="bg-white rounded-3xl p-4 border border-slate-100 shadow-xs flex items-center justify-between gap-3 hover:border-pink-100 transition-all cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-pink-50 border border-pink-100/80 flex flex-col items-center justify-center shrink-0">
+                        <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase leading-none">
+                          {diaSemana}
+                        </span>
+                        <span className="text-base font-black text-slate-800 leading-tight">
+                          {diaFormatado}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <h4 className="text-sm font-extrabold text-slate-800 tracking-tight">
+                          {escala.cuidador}
+                        </h4>
+                        <div className="flex items-center gap-1 text-xs text-slate-500 font-medium mt-0.5">
+                          <Clock size={12} className="text-slate-400" />
+                          <span>
+                            {escala.horaInicio} às {escala.horaSaida}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <StatusBadge status={escala.status || 'Confirmado'} />
+                  </div>
+                );
+              })
+            ) : (
+              <EmptyState
+                icon={CalendarCheck2}
+                title="Sem Plantões neste Mês"
+                description="Não localizamos plantões agendados para este período no sistema."
+              />
+            )}
+          </section>
+        )}
+
+        {/* CTA para Pedidos de Escala */}
+        <Link
+          href="/pedidos"
+          className="w-full py-4 bg-white hover:bg-slate-50 text-slate-800 rounded-3xl font-extrabold text-sm border border-slate-200/80 shadow-xs flex items-center justify-center gap-2 active:scale-95 transition-all mt-2"
+        >
+          <ClipboardList size={18} className="text-[var(--color-brand-primary)]" />
+          <span>Solicitar Alteração na Escala</span>
+        </Link>
       </main>
+
+      {/* Bottom Sheet de Detalhes do Plantão */}
+      <BottomSheet
+        isOpen={!!selectedDayPlantao}
+        onClose={() => setSelectedDayPlantao(null)}
+        title={`Plantão de ${String(selectedDayPlantao?.dayNumber || '').padStart(2, '0')} de ${MONTH_NAMES[month]}`}
+      >
+        {selectedDayPlantao && (
+          <div className="flex flex-col gap-4 pt-2">
+            <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <Avatar name={selectedDayPlantao.cuidador} size="lg" variant="teal" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  Profissional Escalado
+                </span>
+                <h4 className="text-base font-black text-slate-800">
+                  {selectedDayPlantao.cuidador}
+                </h4>
+                <span className="text-xs text-[var(--color-brand-secondary)] font-bold">
+                  Cuidador(a) de Plantão
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex flex-col">
+                <span className="text-[10px] font-extrabold uppercase text-slate-400">
+                  Horário do Turno
+                </span>
+                <span className="text-xs font-bold text-slate-800 mt-0.5">
+                  {selectedDayPlantao.horaInicio} às {selectedDayPlantao.horaSaida}
+                </span>
+              </div>
+
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex flex-col">
+                <span className="text-[10px] font-extrabold uppercase text-slate-400">
+                  Situação
+                </span>
+                <span className="text-xs font-bold text-emerald-600 mt-0.5">
+                  {selectedDayPlantao.status || 'Confirmado'}
+                </span>
+              </div>
+            </div>
+
+            <Link
+              href="/pedidos"
+              className="w-full py-3.5 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-dark)] text-white font-bold text-sm rounded-2xl flex items-center justify-center gap-2 mt-2 shadow-md shadow-[var(--color-brand-primary)]/20 transition-colors"
+            >
+              <ClipboardList size={16} />
+              <span>Solicitar Troca ou Folga neste Dia</span>
+            </Link>
+          </div>
+        )}
+      </BottomSheet>
     </div>
   );
 }
