@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Calendar,
@@ -50,6 +51,12 @@ function isTruthy(val: boolean | number | string | undefined | null): boolean {
 }
 
 export function EvolutionDetailSheet({ ficha, onClose }: EvolutionDetailSheetProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -58,7 +65,7 @@ export function EvolutionDetailSheet({ ficha, onClose }: EvolutionDetailSheetPro
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  if (!ficha) return null;
+  if (!ficha || !mounted) return null;
 
   const dataFormatada = new Date(ficha.DataCriacao).toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -69,11 +76,11 @@ export function EvolutionDetailSheet({ ficha, onClose }: EvolutionDetailSheetPro
   const score = ficha.ScoreSaude ?? null;
   const medicamentos = ficha.FichaAnamnese_Medicamento ?? [];
 
-  return (
-    <>
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity"
+        className="fixed inset-0"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -83,8 +90,7 @@ export function EvolutionDetailSheet({ ficha, onClose }: EvolutionDetailSheetPro
         role="dialog"
         aria-modal="true"
         aria-label={`Evolução de ${dataFormatada}`}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[88dvh] flex flex-col"
-        style={{ maxWidth: '480px', margin: '0 auto' }}
+        className="relative z-10 w-full max-w-[480px] bg-white rounded-t-3xl shadow-2xl max-h-[88dvh] flex flex-col animate-in slide-in-from-bottom-8 duration-300"
       >
         {/* Handle visual */}
         <div className="flex justify-center pt-3 pb-1 shrink-0">
@@ -292,6 +298,7 @@ export function EvolutionDetailSheet({ ficha, onClose }: EvolutionDetailSheetPro
           )}
         </div>
       </div>
-    </>
+    </div>,
+    document.body
   );
 }

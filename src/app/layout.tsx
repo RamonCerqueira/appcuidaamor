@@ -47,7 +47,7 @@ export default function RootLayout({
       <body className="antialiased min-h-screen bg-slate-900 md:py-4 flex justify-center items-start">
         <div className="w-full max-w-[480px] min-h-screen md:min-h-[920px] md:max-h-[960px] md:rounded-[2.5rem] bg-[var(--color-brand-background)] shadow-2xl relative mx-auto flex flex-col overflow-x-hidden md:border md:border-slate-800 md:overflow-y-auto scrollbar-hide">
           <AmbientBackground />
-          <div className="relative z-10 flex flex-col flex-1">
+          <div className="relative flex flex-col flex-1">
             {children}
           </div>
           <BottomNav />

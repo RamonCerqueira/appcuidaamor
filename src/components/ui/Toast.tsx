@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 interface ToastProps {
@@ -10,6 +11,14 @@ interface ToastProps {
 }
 
 export function Toast({ message, type = 'success', onClose }: ToastProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
   const icons = {
     success: <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />,
     error: <AlertCircle size={18} className="text-rose-500 shrink-0" />,
@@ -22,9 +31,9 @@ export function Toast({ message, type = 'success', onClose }: ToastProps) {
     info: 'border-blue-100 bg-white/95 text-slate-800 shadow-blue-500/10',
   }[type];
 
-  return (
+  return createPortal(
     <div
-      className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] max-w-[360px] w-[90%] p-4 rounded-2xl border shadow-xl backdrop-blur-md flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${borderStyles}`}
+      className={`fixed top-6 left-1/2 -translate-x-1/2 z-[9999] max-w-[360px] w-[90%] p-4 rounded-2xl border shadow-xl backdrop-blur-md flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${borderStyles}`}
     >
       <div className="flex items-center gap-3">
         {icons[type]}
@@ -38,6 +47,8 @@ export function Toast({ message, type = 'success', onClose }: ToastProps) {
           <X size={14} />
         </button>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
+

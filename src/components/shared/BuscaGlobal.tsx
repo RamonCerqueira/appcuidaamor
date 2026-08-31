@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, X, Calendar, User, Activity, CreditCard, FileText, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Search, X, Calendar, Activity, CreditCard, FileText, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface BuscaGlobalProps {
@@ -10,10 +11,15 @@ interface BuscaGlobalProps {
 }
 
 export function BuscaGlobal({ isOpen, onClose }: BuscaGlobalProps) {
+  const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState('');
   const router = useRouter();
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   const itens = [
     {
@@ -61,8 +67,8 @@ export function BuscaGlobal({ isOpen, onClose }: BuscaGlobalProps) {
     router.push(link);
   };
 
-  return (
-    <div className="fixed inset-0 z-[1000] flex items-start justify-center bg-slate-900/60 backdrop-blur-sm p-4 pt-12 animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center bg-slate-900/60 backdrop-blur-sm p-4 pt-12 animate-in fade-in duration-200">
       <div className="w-full max-w-[440px] bg-white rounded-3xl p-5 shadow-2xl border border-slate-100 flex flex-col gap-4">
         {/* Input de Busca */}
         <div className="relative flex items-center">
@@ -120,6 +126,8 @@ export function BuscaGlobal({ isOpen, onClose }: BuscaGlobalProps) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
+
