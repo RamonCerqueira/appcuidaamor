@@ -24,10 +24,21 @@ export default function Login() {
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [manterConectado, setManterConectado] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showHelpModal, setShowHelpModal] = useState(false);
   const router = useRouter();
+
+  // Carrega CPF lembrado previamente se o usuário optou por manter conectado
+  useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedCpf = localStorage.getItem('cuida_lembrar_cpf');
+      const savedManter = localStorage.getItem('cuida_manter_conectado');
+      if (savedCpf) setCpf(savedCpf);
+      if (savedManter !== null) setManterConectado(savedManter === 'true');
+    }
+  });
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '');
@@ -55,12 +66,21 @@ export default function Login() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cpf, senha }),
+        body: JSON.stringify({ cpf, senha, manterConectado }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.sucesso) {
+        if (typeof window !== 'undefined') {
+          if (manterConectado) {
+            localStorage.setItem('cuida_lembrar_cpf', cpf);
+            localStorage.setItem('cuida_manter_conectado', 'true');
+          } else {
+            localStorage.removeItem('cuida_lembrar_cpf');
+            localStorage.removeItem('cuida_manter_conectado');
+          }
+        }
         router.push('/');
       } else {
         setError(
@@ -218,6 +238,28 @@ export default function Login() {
                 <span>Como usar?</span>
                 <HelpCircle size={13} />
               </button>
+            </div>
+
+            {/* Opção Manter Conectado */}
+            <div className="pt-1">
+              <label
+                className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-white/70 hover:bg-white border border-slate-200/70 hover:border-pink-200 transition-all cursor-pointer select-none group"
+              >
+                <input
+                  type="checkbox"
+                  checked={manterConectado}
+                  onChange={(e) => setManterConectado(e.target.checked)}
+                  className="w-4 h-4 rounded-md accent-[var(--color-brand-primary)] cursor-pointer"
+                />
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900 transition-colors">
+                    Manter conectado neste aparelho
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Acesso rápido e seguro sem redigitar
+                  </span>
+                </div>
+              </label>
             </div>
           </div>
 

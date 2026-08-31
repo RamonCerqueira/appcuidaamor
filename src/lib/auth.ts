@@ -42,9 +42,12 @@ export async function verifyToken(request: NextRequest): Promise<AuthPayload | n
 
 /**
  * Cria um novo JWT para o usuário autenticado.
- * Expiração: 8 horas (sessão diária).
+ * Expiração padrão: 90 dias quando 'manter conectado' ativado, ou 24 horas.
  */
-export async function signToken(payload: AuthPayload): Promise<string> {
+export async function signToken(
+  payload: AuthPayload,
+  expiresIn: string = '90d'
+): Promise<string> {
   return new jose.SignJWT({
     id: payload.id,
     nome: payload.nome,
@@ -52,7 +55,7 @@ export async function signToken(payload: AuthPayload): Promise<string> {
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('8h')
+    .setExpirationTime(expiresIn)
     .sign(getJwtSecret())
 }
 

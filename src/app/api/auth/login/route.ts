@@ -127,7 +127,7 @@ function matchesBirthDate(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { cpf, senha } = body
+    const { cpf, senha, manterConectado = true } = body
 
     if (!cpf || !senha) {
       return NextResponse.json(
@@ -382,11 +382,17 @@ export async function POST(request: NextRequest) {
 
     const idSessao = clienteEncontrado.CodCli
 
-    const token = await signToken({
-      id: idSessao,
-      nome: clienteEncontrado.Cliente || clienteEncontrado.Razao || '',
-      codUsu: clienteEncontrado.CodUsu || null,
-    })
+    const expiresIn = manterConectado ? '90d' : '24h'
+    const maxAge = manterConectado ? 60 * 60 * 24 * 90 : 60 * 60 * 24
+
+    const token = await signToken(
+      {
+        id: idSessao,
+        nome: clienteEncontrado.Cliente || clienteEncontrado.Razao || '',
+        codUsu: clienteEncontrado.CodUsu || null,
+      },
+      expiresIn
+    )
 
     const response = NextResponse.json({
       sucesso: true,
@@ -400,7 +406,7 @@ export async function POST(request: NextRequest) {
       name: AUTH_COOKIE.name,
       value: token,
       ...AUTH_COOKIE.options,
-      maxAge: 60 * 60 * 8,
+      maxAge,
     })
 
     return response
