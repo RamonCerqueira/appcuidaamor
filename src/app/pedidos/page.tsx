@@ -12,10 +12,10 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronUp,
-  User,
   Calendar as CalendarIcon,
-  HelpCircle,
   Sparkles,
+  UserCheck,
+  X,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -25,12 +25,22 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Toast } from '@/components/ui/Toast';
 import { Select, SelectOption } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
+import { Avatar } from '@/components/ui/Avatar';
 
 type Cuidador = {
   id: number;
   nome: string;
   avatarSrc?: string | null;
   plantoes?: string[];
+  proximoPlantao?: string | null;
+};
+
+type PlantaoMapa = {
+  dataIso: string;
+  dataKey: string; // YYYY-MM-DD
+  cuidadorId: number;
+  cuidadorNome: string;
+  avatarSrc: string | null;
 };
 
 type SolicitacaoHistorico = {
@@ -72,6 +82,7 @@ const CATEGORIAS_OUTRA = [
 
 export default function Pedidos() {
   const [cuidadores, setCuidadores] = useState<Cuidador[]>([]);
+  const [mapaPlantoes, setMapaPlantoes] = useState<PlantaoMapa[]>([]);
   const [historico, setHistorico] = useState<SolicitacaoHistorico[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -99,7 +110,10 @@ export default function Pedidos() {
     fetch('/api/cuidadores-ativos')
       .then((res) => res.json())
       .then((json) => {
-        if (json.sucesso) setCuidadores(json.cuidadores || []);
+        if (json.sucesso) {
+          setCuidadores(json.cuidadores || []);
+          setMapaPlantoes(json.mapaPlantoes || []);
+        }
       })
       .catch((err) => console.error('Erro ao carregar cuidadores:', err));
 
@@ -115,9 +129,12 @@ export default function Pedidos() {
   const cuidadoresOptions: SelectOption[] = cuidadores.map((c) => ({
     value: c.id,
     label: c.nome,
-    sublabel: c.plantoes && c.plantoes.length > 0 ? `${c.plantoes.length} plantões na escala` : 'Cuidador(a) Ativo(a)',
+    sublabel:
+      c.plantoes && c.plantoes.length > 0
+        ? `${c.plantoes.length} ${c.plantoes.length === 1 ? 'plantão futuro' : 'plantões futuros'}`
+        : 'Escala Vigente',
     avatarSrc: c.avatarSrc,
-    badge: 'Escala',
+    badge: 'Escala Ativa',
   }));
 
   const resetForm = () => {
@@ -136,6 +153,32 @@ export default function Pedidos() {
   const closeModal = () => {
     setActiveModal(null);
     resetForm();
+  };
+
+  // Sincronização: Usuário seleciona uma data no calendário ➔ auto-seleciona a cuidadora daquele dia
+  const handleDateClick = (dateIso: string, dataKey: string) => {
+    const plantaoDoDia = mapaPlantoes.find((p) => p.dataKey === dataKey);
+
+    if (activeModal === 'FOLGA') {
+      if (datasFolga.includes(dateIso)) {
+        setDatasFolga(datasFolga.filter((d) => d !== dateIso));
+      } else {
+        setDatasFolga([...datasFolga, dateIso]);
+        if (plantaoDoDia && !selectedCuidador) {
+          setSelectedCuidador(plantaoDoDia.cuidadorId);
+        }
+      }
+    } else if (activeModal === 'REMOVER') {
+      setDataDesejada(dataKey);
+      if (plantaoDoDia) {
+        setSelectedCuidador(plantaoDoDia.cuidadorId);
+      }
+    } else if (activeModal === 'ALTERAR') {
+      setDataInicio(dataKey);
+      if (plantaoDoDia && !selectedCuidador) {
+        setSelectedCuidador(plantaoDoDia.cuidadorId);
+      }
+    }
   };
 
   const isFormValid = () => {
@@ -238,8 +281,10 @@ export default function Pedidos() {
     }
   };
 
+  const cuidadorSelecionadoObj = cuidadores.find((c) => c.id === selectedCuidador);
+
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
       <Header title="Solicitações" subtitle="Central de Atendimento" showBack />
 
       {successToast && (
@@ -481,13 +526,174 @@ export default function Pedidos() {
           {/* ===================== FORM 1: TROCA DE CUIDADOR ===================== */}
           {activeModal === 'REMOVER' && (
             <>
-              <Select
-                label="Selecione o(a) Profissional Atual"
-                placeholder="Escolha a cuidadora da escala..."
-                value={selectedCuidador}
-                onChange={(val) => setSelectedCuidador(Number(val))}
-                options={cuidadoresOptions}
-              />
+              <div className="flex flex-col gap-1">
+                <Select
+                  label="1. Selecione o(a) Profissional ou Toque na Data Abaixo"
+                  placeholder="Escolha a cuidadora da escala ativa..."
+                  value={selectedCuidador}
+                  onChange={(val) => {
+                    setSelectedCuidador(val ? Number(val) : null);
+                  }}
+                  options={cuidadoresOptions}
+                />
+              </div>
+
+              {/* Calendário Inteligente de Plantões */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                    {selectedCuidador
+                      ? `Plantões de ${cuidadorSelecionadoObj?.nome || 'Profissional'}`
+                      : 'Ou Toque em um Dia com Plantão na Escala'}
+                  </label>
+                  {selectedCuidador && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCuidador(null);
+                        setDataDesejada('');
+                      }}
+                      className="text-[11px] font-bold text-[var(--color-brand-primary)] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <X size={12} /> Ver todos os dias
+                    </button>
+                  )}
+                </div>
+
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentMonth(
+                          new Date(
+                            currentMonth.getFullYear(),
+                            currentMonth.getMonth() - 1,
+                            1
+                          )
+                        )
+                      }
+                      className="w-8 h-8 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 font-bold transition-colors cursor-pointer"
+                    >
+                      &lt;
+                    </button>
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                      {currentMonth.toLocaleDateString('pt-BR', {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentMonth(
+                          new Date(
+                            currentMonth.getFullYear(),
+                            currentMonth.getMonth() + 1,
+                            1
+                          )
+                        )
+                      }
+                      className="w-8 h-8 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 font-bold transition-colors cursor-pointer"
+                    >
+                      &gt;
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                    {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dia) => (
+                      <span key={dia} className="text-[10px] font-bold text-slate-400 uppercase">
+                        {dia}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1">
+                    {(() => {
+                      const plantoesPermitidos = selectedCuidador
+                        ? mapaPlantoes.filter((p) => p.cuidadorId === selectedCuidador)
+                        : mapaPlantoes;
+
+                      const plantoesKeys = plantoesPermitidos.map((p) => p.dataKey);
+
+                      const year = currentMonth.getFullYear();
+                      const month = currentMonth.getMonth();
+                      const firstDay = new Date(year, month, 1).getDay();
+                      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                      const days = [];
+                      for (let i = 0; i < firstDay; i++) {
+                        days.push(<div key={`empty-${i}`} className="h-9" />);
+                      }
+
+                      for (let d = 1; d <= daysInMonth; d++) {
+                        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        const isPlantao = plantoesKeys.includes(dateKey);
+                        const isSelected = dataDesejada === dateKey;
+                        const dateObj = new Date(year, month, d);
+
+                        days.push(
+                          <button
+                            key={d}
+                            type="button"
+                            disabled={!isPlantao}
+                            onClick={() => handleDateClick(dateObj.toISOString(), dateKey)}
+                            className={`h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${
+                              isSelected
+                                ? 'bg-[var(--color-brand-primary)] text-white shadow-xs font-extrabold scale-95 ring-2 ring-[var(--color-brand-primary)]/20'
+                                : isPlantao
+                                ? 'bg-pink-50 text-[var(--color-brand-primary)] hover:bg-pink-100 border border-pink-200/80 cursor-pointer font-bold'
+                                : 'text-slate-300 select-none'
+                            }`}
+                          >
+                            {d}
+                          </button>
+                        );
+                      }
+                      return days;
+                    })()}
+                  </div>
+
+                  <div className="flex items-center gap-4 mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-500 font-semibold px-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-md bg-pink-50 border border-pink-200 inline-block" />
+                      <span>Plantão na escala</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-md bg-[var(--color-brand-primary)] inline-block" />
+                      <span>Data selecionada</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card de Plantão Identificado */}
+              {cuidadorSelecionadoObj && (
+                <div className="bg-pink-50/50 border border-pink-100 rounded-2xl p-3 flex items-center justify-between gap-3 animate-in fade-in duration-150">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Avatar
+                      src={cuidadorSelecionadoObj.avatarSrc}
+                      name={cuidadorSelecionadoObj.nome}
+                      size="sm"
+                      variant="pink"
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[10px] font-extrabold uppercase text-[var(--color-brand-primary)] tracking-wider">
+                        Profissional Vinculado(a)
+                      </span>
+                      <span className="text-xs font-black text-slate-800 truncate">
+                        {cuidadorSelecionadoObj.nome}
+                      </span>
+                    </div>
+                  </div>
+
+                  {dataDesejada && (
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white text-slate-700 border border-slate-200 shrink-0">
+                      Data: {dataDesejada.split('-').reverse().slice(0, 2).join('/')}
+                    </span>
+                  )}
+                </div>
+              )}
 
               <Select
                 label="Motivo da Substituição"
@@ -497,19 +703,12 @@ export default function Pedidos() {
                 options={MOTIVOS_TROCA.map((m) => ({ value: m, label: m }))}
               />
 
-              <Input
-                label="Data Desejada para Troca (Opcional)"
-                type="date"
-                value={dataDesejada}
-                onChange={(e) => setDataDesejada(e.target.value)}
-              />
-
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 ml-1">
                   Observações Adicionais (Opcional)
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   placeholder="Conte-nos mais detalhes para alinharmos o perfil ideal..."
                   value={observacao}
                   onChange={(e) => setObservacao(e.target.value)}
@@ -567,11 +766,11 @@ export default function Pedidos() {
           {activeModal === 'FOLGA' && (
             <>
               <Select
-                label="Selecione o(a) Profissional"
-                placeholder="Escolha a cuidadora da escala..."
+                label="1. Escolha a Cuidadora ou Toque nos Dias Abaixo"
+                placeholder="Selecione a profissional..."
                 value={selectedCuidador}
                 onChange={(val) => {
-                  setSelectedCuidador(Number(val));
+                  setSelectedCuidador(val ? Number(val) : null);
                   setDatasFolga([]);
                 }}
                 options={cuidadoresOptions}
@@ -589,130 +788,141 @@ export default function Pedidos() {
                   )}
                 </div>
 
-                {!selectedCuidador ? (
-                  <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center text-xs font-semibold text-slate-400">
-                    Selecione uma profissional acima para visualizar seus dias de plantão na escala.
-                  </div>
-                ) : (
-                  <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs">
-                    <div className="flex items-center justify-between mb-3 px-1">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCurrentMonth(
-                            new Date(
-                              currentMonth.getFullYear(),
-                              currentMonth.getMonth() - 1,
-                              1
-                            )
+                <div className="bg-white border border-slate-200/90 rounded-2xl p-3.5 shadow-xs">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentMonth(
+                          new Date(
+                            currentMonth.getFullYear(),
+                            currentMonth.getMonth() - 1,
+                            1
                           )
-                        }
-                        className="w-8 h-8 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 font-bold transition-colors cursor-pointer"
-                      >
-                        &lt;
-                      </button>
-                      <span className="text-xs font-black text-slate-800 uppercase tracking-tight">
-                        {currentMonth.toLocaleDateString('pt-BR', {
-                          month: 'long',
-                          year: 'numeric',
-                        })}
+                        )
+                      }
+                      className="w-8 h-8 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 font-bold transition-colors cursor-pointer"
+                    >
+                      &lt;
+                    </button>
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                      {currentMonth.toLocaleDateString('pt-BR', {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentMonth(
+                          new Date(
+                            currentMonth.getFullYear(),
+                            currentMonth.getMonth() + 1,
+                            1
+                          )
+                        )
+                      }
+                      className="w-8 h-8 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 font-bold transition-colors cursor-pointer"
+                    >
+                      &gt;
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                    {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dia) => (
+                      <span key={dia} className="text-[10px] font-bold text-slate-400 uppercase">
+                        {dia}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCurrentMonth(
-                            new Date(
-                              currentMonth.getFullYear(),
-                              currentMonth.getMonth() + 1,
-                              1
-                            )
-                          )
-                        }
-                        className="w-8 h-8 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 font-bold transition-colors cursor-pointer"
-                      >
-                        &gt;
-                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1">
+                    {(() => {
+                      const plantoesPermitidos = selectedCuidador
+                        ? mapaPlantoes.filter((p) => p.cuidadorId === selectedCuidador)
+                        : mapaPlantoes;
+
+                      const plantoesKeys = plantoesPermitidos.map((p) => p.dataKey);
+
+                      const year = currentMonth.getFullYear();
+                      const month = currentMonth.getMonth();
+                      const firstDay = new Date(year, month, 1).getDay();
+                      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                      const days = [];
+                      for (let i = 0; i < firstDay; i++) {
+                        days.push(<div key={`empty-${i}`} className="h-9" />);
+                      }
+
+                      for (let d = 1; d <= daysInMonth; d++) {
+                        const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        const isPlantao = plantoesKeys.includes(dateKey);
+                        const dateObj = new Date(year, month, d);
+                        const dateIso = dateObj.toISOString();
+                        const isSelected = datasFolga.includes(dateIso);
+
+                        days.push(
+                          <button
+                            key={d}
+                            type="button"
+                            disabled={!isPlantao}
+                            onClick={() => handleDateClick(dateIso, dateKey)}
+                            className={`h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${
+                              isSelected
+                                ? 'bg-[var(--color-brand-primary)] text-white shadow-xs font-extrabold scale-95 ring-2 ring-[var(--color-brand-primary)]/20'
+                                : isPlantao
+                                ? 'bg-pink-50 text-[var(--color-brand-primary)] hover:bg-pink-100 border border-pink-200/80 cursor-pointer font-bold'
+                                : 'text-slate-300 select-none'
+                            }`}
+                          >
+                            {d}
+                          </button>
+                        );
+                      }
+                      return days;
+                    })()}
+                  </div>
+
+                  <div className="flex items-center gap-4 mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-500 font-semibold px-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-md bg-pink-50 border border-pink-200 inline-block" />
+                      <span>Plantão disponível</span>
                     </div>
-
-                    <div className="grid grid-cols-7 gap-1 text-center mb-1">
-                      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dia) => (
-                        <span key={dia} className="text-[10px] font-bold text-slate-400 uppercase">
-                          {dia}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1">
-                      {(() => {
-                        const plantoesCuidador =
-                          cuidadores.find((c) => c.id === selectedCuidador)?.plantoes || [];
-                        const plantoesDates = plantoesCuidador.map((p) => {
-                          const d = new Date(p);
-                          return new Date(
-                            d.getFullYear(),
-                            d.getMonth(),
-                            d.getDate()
-                          ).getTime();
-                        });
-
-                        const year = currentMonth.getFullYear();
-                        const month = currentMonth.getMonth();
-                        const firstDay = new Date(year, month, 1).getDay();
-                        const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-                        const days = [];
-                        for (let i = 0; i < firstDay; i++) {
-                          days.push(<div key={`empty-${i}`} className="h-9" />);
-                        }
-
-                        for (let d = 1; d <= daysInMonth; d++) {
-                          const date = new Date(year, month, d);
-                          const isPlantao = plantoesDates.includes(date.getTime());
-                          const dateIso = date.toISOString();
-                          const isSelected = datasFolga.includes(dateIso);
-
-                          days.push(
-                            <button
-                              key={d}
-                              type="button"
-                              disabled={!isPlantao}
-                              onClick={() => {
-                                if (!isPlantao) return;
-                                if (isSelected) {
-                                  setDatasFolga(datasFolga.filter((iso) => iso !== dateIso));
-                                } else {
-                                  setDatasFolga([...datasFolga, dateIso]);
-                                }
-                              }}
-                              className={`h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${
-                                isSelected
-                                  ? 'bg-[var(--color-brand-primary)] text-white shadow-xs font-extrabold scale-95'
-                                  : isPlantao
-                                  ? 'bg-pink-50 text-[var(--color-brand-primary)] hover:bg-pink-100 border border-pink-200/80 cursor-pointer font-bold'
-                                  : 'text-slate-300 select-none'
-                              }`}
-                            >
-                              {d}
-                            </button>
-                          );
-                        }
-                        return days;
-                      })()}
-                    </div>
-
-                    <div className="flex items-center gap-4 mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-500 font-semibold px-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-md bg-pink-50 border border-pink-200 inline-block" />
-                        <span>Dia de plantão</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-md bg-[var(--color-brand-primary)] inline-block" />
-                        <span>Selecionado</span>
-                      </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-md bg-[var(--color-brand-primary)] inline-block" />
+                      <span>Folga selecionada</span>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
+
+              {/* Resumo da Cuidadora Selecionada */}
+              {cuidadorSelecionadoObj && (
+                <div className="bg-pink-50/50 border border-pink-100 rounded-2xl p-3 flex items-center justify-between gap-3 animate-in fade-in duration-150">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Avatar
+                      src={cuidadorSelecionadoObj.avatarSrc}
+                      name={cuidadorSelecionadoObj.nome}
+                      size="sm"
+                      variant="pink"
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[10px] font-extrabold uppercase text-[var(--color-brand-primary)] tracking-wider">
+                        Cuidadora da Escala
+                      </span>
+                      <span className="text-xs font-black text-slate-800 truncate">
+                        {cuidadorSelecionadoObj.nome}
+                      </span>
+                    </div>
+                  </div>
+
+                  {datasFolga.length > 0 && (
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white text-slate-700 border border-slate-200 shrink-0">
+                      {datasFolga.length} {datasFolga.length === 1 ? 'dia' : 'dias'}
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 ml-1">

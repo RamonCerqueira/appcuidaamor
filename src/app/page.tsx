@@ -78,17 +78,22 @@ export default function Home() {
     .toUpperCase() || 'FS';
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
-      <Header
-        title="Visão Geral"
-        subtitle={`Olá, ${primeiroNome}`}
-        userInitials={userInitials}
-        userName={responsavel}
-        showSearch
-        showNotificationDot={notificacoes.length > 0}
-      />
+    <div className="relative flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36 overflow-x-hidden">
+      {/* Fundo degradê rosa pastel suave no topo, sumindo suavemente no bottom */}
+      <div className="absolute top-0 left-0 right-0 h-[420px] bg-gradient-to-b from-pink-100/70 via-pink-50/40 to-transparent pointer-events-none z-0" />
 
-      <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
+      <div className="relative z-10">
+        <Header
+          title="Visão Geral"
+          subtitle={`Olá, ${primeiroNome}`}
+          userInitials={userInitials}
+          userName={responsavel}
+          showSearch
+          showNotificationDot={notificacoes.length > 0}
+        />
+      </div>
+
+      <main className="flex-1 px-5 pt-4 flex flex-col gap-5 relative z-10">
         {/* 1. "Meu Familiar Agora" (Visão Unificada de Alta Prioridade) */}
         <MeuFamiliarAgora
           paciente={paciente}
@@ -97,97 +102,77 @@ export default function Home() {
           ultimaAtualizacao={ultimaEvolucao}
         />
 
-        {/* 2. Diário / Timeline do Cuidado de Hoje */}
-        <TimelineCuidado />
-
-        {/* 3. Confirmação Familiar ("Está tudo bem?") */}
-        <ConfirmacaoFamiliar />
-
-        {/* 4. Grid de Acesso Rápido aos 4 Módulos Centrais */}
-        <section className="flex flex-col gap-2.5">
+        {/* 2. Grid de Acesso Rápido (4 Botões em 1 Única Linha - Antes do Diário) */}
+        <section className="flex flex-col gap-2">
           <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 px-1">
             Acesso Rápido
           </span>
 
-          <div className="grid grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-4 gap-2.5">
             {/* Saúde */}
             <Link
               href="/quadro"
-              className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs hover:border-pink-200 transition-all flex flex-col justify-between h-32 group"
+              className="bg-white rounded-3xl p-3 border border-slate-100/90 shadow-xs hover:border-pink-200 active:scale-95 transition-all flex flex-col items-center justify-center gap-2 group text-center"
             >
-              <div className="w-10 h-10 rounded-2xl bg-pink-50 text-[var(--color-brand-primary)] flex items-center justify-center border border-pink-100 group-hover:scale-105 transition-transform">
+              <div className="w-11 h-11 rounded-2xl bg-pink-50 text-[var(--color-brand-primary)] flex items-center justify-center border border-pink-100 group-hover:scale-105 transition-transform shadow-xs">
                 <Activity size={20} strokeWidth={2.25} />
               </div>
-              <div className="flex flex-col">
-                <h4 className="text-sm font-extrabold text-slate-800 tracking-tight">
-                  Saúde
-                </h4>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Prontuário e remédios
-                </p>
-              </div>
+              <span className="text-[11px] font-black text-slate-800 tracking-tight">
+                Saúde
+              </span>
             </Link>
 
             {/* Escala */}
             <Link
               href="/escala"
-              className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs hover:border-cyan-200 transition-all flex flex-col justify-between h-32 group"
+              className="bg-white rounded-3xl p-3 border border-slate-100/90 shadow-xs hover:border-cyan-200 active:scale-95 transition-all flex flex-col items-center justify-center gap-2 group text-center"
             >
-              <div className="w-10 h-10 rounded-2xl bg-cyan-50 text-[var(--color-brand-secondary)] flex items-center justify-center border border-cyan-100 group-hover:scale-105 transition-transform">
+              <div className="w-11 h-11 rounded-2xl bg-cyan-50 text-[var(--color-brand-secondary)] flex items-center justify-center border border-cyan-100 group-hover:scale-105 transition-transform shadow-xs">
                 <Calendar size={20} strokeWidth={2.25} />
               </div>
-              <div className="flex flex-col">
-                <h4 className="text-sm font-extrabold text-slate-800 tracking-tight">
-                  Escala
-                </h4>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Plantões e turnos
-                </p>
-              </div>
+              <span className="text-[11px] font-black text-slate-800 tracking-tight">
+                Escala
+              </span>
             </Link>
 
             {/* Financeiro */}
             <Link
               href="/boletos"
-              className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs hover:border-amber-200 transition-all flex flex-col justify-between h-32 group relative"
+              className="bg-white rounded-3xl p-3 border border-slate-100/90 shadow-xs hover:border-amber-200 active:scale-95 transition-all flex flex-col items-center justify-center gap-2 group text-center relative"
             >
               {boletosPendentes > 0 && (
-                <span className="absolute top-3.5 right-3.5 px-2 py-0.5 bg-amber-500 text-white font-extrabold text-[9px] rounded-full uppercase tracking-wider">
-                  {boletosPendentes} pendente
+                <span className="absolute 1 -top-1 -right-1 w-5 h-5 bg-amber-500 text-white font-extrabold text-[10px] rounded-full flex items-center justify-center shadow-xs">
+                  {boletosPendentes}
                 </span>
               )}
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 group-hover:scale-105 transition-transform">
+              <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 group-hover:scale-105 transition-transform shadow-xs">
                 <CreditCard size={20} strokeWidth={2.25} />
               </div>
-              <div className="flex flex-col">
-                <h4 className="text-sm font-extrabold text-slate-800 tracking-tight">
-                  Financeiro
-                </h4>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  {boletosPendentes > 0 ? 'Fatura em aberto' : 'Tudo em dia'}
-                </p>
-              </div>
+              <span className="text-[11px] font-black text-slate-800 tracking-tight">
+                Financeiro
+              </span>
             </Link>
 
-            {/* Pedidos */}
+            {/* Solicitações / Pedidos */}
             <Link
               href="/pedidos"
-              className="bg-white rounded-3xl p-4.5 border border-slate-100 shadow-xs hover:border-emerald-200 transition-all flex flex-col justify-between h-32 group"
+              className="bg-white rounded-3xl p-3 border border-slate-100/90 shadow-xs hover:border-emerald-200 active:scale-95 transition-all flex flex-col items-center justify-center gap-2 group text-center"
             >
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 group-hover:scale-105 transition-transform">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 group-hover:scale-105 transition-transform shadow-xs">
                 <ClipboardList size={20} strokeWidth={2.25} />
               </div>
-              <div className="flex flex-col">
-                <h4 className="text-sm font-extrabold text-slate-800 tracking-tight">
-                  Solicitações
-                </h4>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Folgas e trocas
-                </p>
-              </div>
+              <span className="text-[11px] font-black text-slate-800 tracking-tight">
+                Pedidos
+              </span>
             </Link>
           </div>
         </section>
+
+        {/* 3. Diário / Timeline do Cuidado de Hoje */}
+        <TimelineCuidado />
+
+        {/* 4. Confirmação Familiar ("Está tudo bem?") */}
+        <ConfirmacaoFamiliar />
 
         {/* 5. Últimos Comunicados & Notificações */}
         {notificacoes.length > 0 && (
@@ -231,7 +216,7 @@ export default function Home() {
         )}
 
         {/* 6. Central de Contato & Emergência Rápida */}
-        <section className="bg-slate-900 rounded-3xl p-5 text-white flex flex-col gap-3 shadow-lg shadow-slate-900/10">
+        <section className="bg-slate-900 rounded-3xl p-5 text-white flex flex-col gap-3 shadow-lg shadow-slate-900/10 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-pink-500/20 text-[var(--color-brand-primary-light)] flex items-center justify-center border border-pink-500/30">

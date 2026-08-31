@@ -71,7 +71,7 @@ export default function CentralDocumentos() {
   });
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
       <Header title="Documentos" subtitle="Central Digital" showBack />
 
       {toastMessage && (

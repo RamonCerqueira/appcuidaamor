@@ -174,7 +174,7 @@ export default function Quadro() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
         <Header title="Quadro de Saúde" subtitle="Prontuário e Evolução" showBack />
         <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
           <Skeleton className="h-28 rounded-3xl" />
@@ -201,7 +201,7 @@ export default function Quadro() {
 
   return (
     <>
-      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
         <Header title="Quadro de Saúde" subtitle="Prontuário e Evolução" showBack />
 
         <main className="flex-1 px-5 pt-5 flex flex-col gap-5">

@@ -89,11 +89,10 @@ export default function BottomNav() {
                 key={item.path}
                 href={item.path}
                 onClick={() => setMoreMenuOpen(false)}
-                className={`flex flex-col items-center justify-center gap-1 w-16 py-1 transition-all duration-200 cursor-pointer ${
-                  active
-                    ? 'text-[var(--color-brand-primary)] font-bold scale-105'
-                    : 'text-slate-400 hover:text-slate-600 font-medium'
-                }`}
+                className={`flex flex-col items-center justify-center gap-1 w-16 py-1 transition-all duration-200 cursor-pointer ${active
+                  ? 'text-[var(--color-brand-primary)] font-bold scale-105'
+                  : 'text-slate-400 hover:text-slate-600 font-medium'
+                  }`}
               >
                 <div className="relative flex items-center justify-center">
                   <Icon
@@ -113,11 +112,10 @@ export default function BottomNav() {
           {/* Botão Mais */}
           <button
             onClick={() => setMoreMenuOpen(true)}
-            className={`flex flex-col items-center justify-center gap-1 w-16 py-1 transition-all duration-200 cursor-pointer ${
-              isMoreActive
-                ? 'text-[var(--color-brand-primary)] font-bold scale-105'
-                : 'text-slate-400 hover:text-slate-600 font-medium'
-            }`}
+            className={`flex flex-col items-center justify-center gap-1 w-16 py-1 transition-all duration-200 cursor-pointer ${isMoreActive
+              ? 'text-[var(--color-brand-primary)] font-bold scale-105'
+              : 'text-slate-400 hover:text-slate-600 font-medium'
+              }`}
           >
             <div className="relative flex items-center justify-center">
               <Menu

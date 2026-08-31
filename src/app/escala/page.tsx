@@ -106,7 +106,7 @@ export default function Escala() {
 
   if (loading && escalas.length === 0) {
     return (
-      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
         <Header title="Escala Mensal" showBack />
         <main className="flex-1 px-5 pt-5 flex flex-col gap-5">
           <Skeleton className="h-12 rounded-full" />
@@ -117,7 +117,7 @@ export default function Escala() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-28">
+    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
       <Header
         title="Escala Mensal"
         subtitle={responsavel}
