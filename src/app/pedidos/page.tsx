@@ -14,8 +14,13 @@ import {
   ChevronUp,
   Calendar as CalendarIcon,
   Sparkles,
-  UserCheck,
   X,
+  Send,
+  AlertCircle,
+  PhoneCall,
+  Trash2,
+  Clock3,
+  ShieldAlert,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -63,6 +68,15 @@ const MOTIVOS_TROCA = [
   'Outro motivo',
 ];
 
+const TAGS_PREFERENCIA_PERFIL = [
+  'Mais calma e paciente',
+  'Experiência com Alzheimer/Demência',
+  'Foco em mobilidade e acamados',
+  'Mais comunicativa e ativa',
+  'Técnica em Enfermagem',
+  'Experiência com Dietas/Sondas',
+];
+
 const TIPOS_AJUSTE_ESCALA = [
   'Mudança de Turno (Diurno / Noturno)',
   'Alteração de Horário de Entrada/Saída',
@@ -72,12 +86,12 @@ const TIPOS_AJUSTE_ESCALA = [
 ];
 
 const CATEGORIAS_OUTRA = [
-  'Dúvida Contratual ou Administrativa',
-  'Medicamentos e Prescrição Médica',
-  'Elogio à Equipe / Profissional',
-  'Reclamação ou Ouvidoria',
-  'Reposição de Materiais / Insumos',
-  'Outro assunto',
+  { label: 'Dúvida Contratual ou Financeira', sla: 'Atendimento em até 4 horas úteis' },
+  { label: 'Medicamentos e Prescrição Médica', sla: 'Prioridade Enfermagem • Retorno em até 2 horas' },
+  { label: 'Elogio à Equipe / Profissional', sla: 'Registrado com destaque para a gerência' },
+  { label: 'Reclamação ou Ouvidoria', sla: 'Prioridade da Diretoria • Análise imediata' },
+  { label: 'Reposição de Materiais / Insumos', sla: 'Encaminhado ao setor de suprimentos' },
+  { label: 'Outro assunto', sla: 'Atendimento geral da coordenação' },
 ];
 
 export default function Pedidos() {
@@ -86,6 +100,7 @@ export default function Pedidos() {
   const [historico, setHistorico] = useState<SolicitacaoHistorico[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [abaHistorico, setAbaHistorico] = useState<'TODOS' | 'ANDAMENTO' | 'CONCLUIDOS'>('TODOS');
 
   // Estados dos Modais
   const [activeModal, setActiveModal] = useState<
@@ -95,35 +110,51 @@ export default function Pedidos() {
   // Campos dos formulários
   const [selectedCuidador, setSelectedCuidador] = useState<number | null>(null);
   const [motivo, setMotivo] = useState('');
+  const [urgenciaTroca, setUrgenciaTroca] = useState<'REGULAR' | 'IMEDIATA'>('REGULAR');
+  const [tagsPerfilSelecionadas, setTagsPerfilSelecionadas] = useState<string[]>([]);
+  
+  // Ajuste de Escala
   const [tipoAjuste, setTipoAjuste] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [dataDesejada, setDataDesejada] = useState('');
+  const [escopoAjuste, setEscopoAjuste] = useState<'DEFINITIVO' | 'TEMPORARIO'>('DEFINITIVO');
+  const [novoHorarioInicio, setNovoHorarioInicio] = useState('');
+  const [novoHorarioFim, setNovoHorarioFim] = useState('');
   const [dataInicio, setDataInicio] = useState('');
+
+  // Folga
+  const [precisaSubstituta, setPrecisaSubstituta] = useState<boolean>(true);
+  const [datasFolga, setDatasFolga] = useState<string[]>([]);
+
+  // Outra
+  const [categoria, setCategoria] = useState('');
   const [titulo, setTitulo] = useState('');
   const [observacao, setObservacao] = useState('');
-  const [datasFolga, setDatasFolga] = useState<string[]>([]);
+  const [dataDesejada, setDataDesejada] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
+  const [cancelingId, setCancelingId] = useState<number | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  useEffect(() => {
-    fetch('/api/cuidadores-ativos')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.sucesso) {
-          setCuidadores(json.cuidadores || []);
-          setMapaPlantoes(json.mapaPlantoes || []);
+  const carregarDados = () => {
+    Promise.all([
+      fetch('/api/cuidadores-ativos').then((res) => res.json()).catch(() => ({})),
+      fetch('/api/solicitacoes').then((res) => res.json()).catch(() => ({})),
+    ])
+      .then(([cuidJson, solJson]) => {
+        if (cuidJson?.sucesso) {
+          setCuidadores(cuidJson.cuidadores || []);
+          setMapaPlantoes(cuidJson.mapaPlantoes || []);
         }
-      })
-      .catch((err) => console.error('Erro ao carregar cuidadores:', err));
-
-    fetch('/api/solicitacoes')
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.sucesso) setHistorico(json.solicitacoes || []);
+        if (solJson?.sucesso) {
+          setHistorico(solJson.solicitacoes || []);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    carregarDados();
   }, []);
 
   const cuidadoresOptions: SelectOption[] = cuidadores.map((c) => ({
@@ -140,13 +171,19 @@ export default function Pedidos() {
   const resetForm = () => {
     setSelectedCuidador(null);
     setMotivo('');
+    setUrgenciaTroca('REGULAR');
+    setTagsPerfilSelecionadas([]);
     setTipoAjuste('');
+    setEscopoAjuste('DEFINITIVO');
+    setNovoHorarioInicio('');
+    setNovoHorarioFim('');
     setCategoria('');
     setDataDesejada('');
     setDataInicio('');
     setTitulo('');
     setObservacao('');
     setDatasFolga([]);
+    setPrecisaSubstituta(true);
     setCurrentMonth(new Date());
   };
 
@@ -155,7 +192,15 @@ export default function Pedidos() {
     resetForm();
   };
 
-  // Sincronização: Usuário seleciona uma data no calendário ➔ auto-seleciona a cuidadora daquele dia
+  const toggleTagPerfil = (tag: string) => {
+    if (tagsPerfilSelecionadas.includes(tag)) {
+      setTagsPerfilSelecionadas(tagsPerfilSelecionadas.filter((t) => t !== tag));
+    } else {
+      setTagsPerfilSelecionadas([...tagsPerfilSelecionadas, tag]);
+    }
+  };
+
+  // Sincronização bidirecional: Usuário clica no calendário ➔ auto-seleciona cuidadora
   const handleDateClick = (dateIso: string, dataKey: string) => {
     const plantaoDoDia = mapaPlantoes.find((p) => p.dataKey === dataKey);
 
@@ -187,7 +232,7 @@ export default function Pedidos() {
       case 'REMOVER':
         return !!selectedCuidador && !!motivo;
       case 'ALTERAR':
-        return !!tipoAjuste && (!!observacao.trim() || !!dataInicio);
+        return !!tipoAjuste && (!!observacao.trim() || !!dataInicio || !!novoHorarioInicio);
       case 'FOLGA':
         return !!selectedCuidador && datasFolga.length > 0;
       case 'OUTRA':
@@ -206,7 +251,13 @@ export default function Pedidos() {
       tipo: activeModal,
       cuidadorId: selectedCuidador,
       motivo: motivo || undefined,
+      urgenciaTroca: activeModal === 'REMOVER' ? urgenciaTroca : undefined,
+      tagsPerfil: activeModal === 'REMOVER' && tagsPerfilSelecionadas.length > 0 ? tagsPerfilSelecionadas : undefined,
       tipoAjuste: tipoAjuste || undefined,
+      escopoAjuste: activeModal === 'ALTERAR' ? escopoAjuste : undefined,
+      novoHorarioInicio: novoHorarioInicio || undefined,
+      novoHorarioFim: novoHorarioFim || undefined,
+      precisaSubstituta: activeModal === 'FOLGA' ? precisaSubstituta : undefined,
       categoria: categoria || undefined,
       dataDesejada: dataDesejada || undefined,
       dataInicio: dataInicio || undefined,
@@ -224,39 +275,7 @@ export default function Pedidos() {
 
       if (data.sucesso) {
         setSuccessToast('Solicitação enviada com sucesso para a coordenação!');
-        const cuidadorObj = cuidadores.find((c) => c.id === selectedCuidador);
-
-        const novosHistoricos: SolicitacaoHistorico[] = [];
-
-        if (activeModal === 'FOLGA') {
-          datasFolga.forEach((d) => {
-            novosHistoricos.push({
-              id: Math.random(),
-              tipo: 'FOLGA',
-              data: new Date().toISOString(),
-              status: 'Em Análise',
-              respostaAdmin: null,
-              cuidadorId: selectedCuidador,
-              cuidadorNome: cuidadorObj?.nome || null,
-              validade: d,
-              observacao: observacao || null,
-            });
-          });
-        } else {
-          novosHistoricos.push({
-            id: data.solicitacao?.Lanc || Math.random(),
-            tipo: activeModal || 'OUTRA',
-            data: new Date().toISOString(),
-            status: 'Em Análise',
-            respostaAdmin: null,
-            cuidadorId: selectedCuidador,
-            cuidadorNome: cuidadorObj?.nome || null,
-            validade: dataDesejada || dataInicio || null,
-            observacao: payload.observacao || motivo || tipoAjuste || categoria || null,
-          });
-        }
-
-        setHistorico([...novosHistoricos, ...historico]);
+        carregarDados();
         closeModal();
         setTimeout(() => setSuccessToast(null), 4000);
       }
@@ -264,6 +283,29 @@ export default function Pedidos() {
       console.error('Erro ao enviar solicitação:', e);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleCancelarSolicitacao = async (id: number) => {
+    if (!confirm('Deseja realmente cancelar esta solicitação?')) return;
+
+    setCancelingId(id);
+    try {
+      const res = await fetch(`/api/solicitacoes?id=${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.sucesso) {
+        setSuccessToast('Solicitação cancelada com sucesso.');
+        carregarDados();
+        setTimeout(() => setSuccessToast(null), 4000);
+      } else {
+        alert(data.mensagem || 'Não foi possível cancelar a solicitação.');
+      }
+    } catch (e) {
+      console.error('Erro ao cancelar solicitação:', e);
+    } finally {
+      setCancelingId(null);
     }
   };
 
@@ -282,6 +324,26 @@ export default function Pedidos() {
   };
 
   const cuidadorSelecionadoObj = cuidadores.find((c) => c.id === selectedCuidador);
+
+  // Filtragem do Histórico
+  const historicoFiltrado = historico.filter((h) => {
+    const statusNorm = (h.status || '').toUpperCase();
+    const isFinalizado =
+      statusNorm === 'ACEITO' ||
+      statusNorm === 'RECUSADO' ||
+      statusNorm === 'CONCLUIDO' ||
+      statusNorm === 'FINALIZADO' ||
+      statusNorm === 'CANCELADO';
+
+    if (abaHistorico === 'ANDAMENTO') return !isFinalizado;
+    if (abaHistorico === 'CONCLUIDOS') return isFinalizado;
+    return true;
+  });
+
+  const totalEmAndamento = historico.filter((h) => {
+    const s = (h.status || '').toUpperCase();
+    return s !== 'ACEITO' && s !== 'RECUSADO' && s !== 'CONCLUIDO' && s !== 'FINALIZADO' && s !== 'CANCELADO';
+  }).length;
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
@@ -367,11 +429,55 @@ export default function Pedidos() {
           </div>
         </section>
 
-        {/* Histórico de Solicitações com Acompanhamento */}
-        <section className="flex flex-col gap-2.5">
-          <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 px-1">
-            Histórico & Acompanhamento
-          </span>
+        {/* Histórico com Filtro de Abas e Acompanhamento */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+              Histórico de Chamados
+            </span>
+            {totalEmAndamento > 0 && (
+              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                {totalEmAndamento} em andamento
+              </span>
+            )}
+          </div>
+
+          {/* Abas Rápidas */}
+          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-2xl">
+            <button
+              type="button"
+              onClick={() => setAbaHistorico('TODOS')}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                abaHistorico === 'TODOS'
+                  ? 'bg-white text-slate-800 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Todos ({historico.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAbaHistorico('ANDAMENTO')}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                abaHistorico === 'ANDAMENTO'
+                  ? 'bg-white text-slate-800 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Em Aberto ({totalEmAndamento})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAbaHistorico('CONCLUIDOS')}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                abaHistorico === 'CONCLUIDOS'
+                  ? 'bg-white text-slate-800 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Concluídos ({historico.length - totalEmAndamento})
+            </button>
+          </div>
 
           <div className="flex flex-col gap-3">
             {loading ? (
@@ -379,8 +485,8 @@ export default function Pedidos() {
                 <Skeleton className="h-24 rounded-3xl" />
                 <Skeleton className="h-24 rounded-3xl" />
               </div>
-            ) : historico.length > 0 ? (
-              historico.map((hist, index) => {
+            ) : historicoFiltrado.length > 0 ? (
+              historicoFiltrado.map((hist, index) => {
                 const date = new Date(hist.data);
                 const dataFormatada = !isNaN(date.getTime())
                   ? `${String(date.getDate()).padStart(2, '0')}/${String(
@@ -398,6 +504,12 @@ export default function Pedidos() {
                   statusNormalizado === 'RECUSADO' ||
                   statusNormalizado === 'CONCLUIDO' ||
                   statusNormalizado === 'FINALIZADO';
+                const isCancelado = statusNormalizado === 'CANCELADO';
+                const isPendente = !isFinalizado && !isCancelado;
+
+                const msgWhatsapp = encodeURIComponent(
+                  `Olá! Gostaria de falar sobre o chamado #${hist.id || ''} (${formatTipo(hist.tipo)}) registrado no App Cuida e Amor.`
+                );
 
                 return (
                   <div
@@ -436,13 +548,13 @@ export default function Pedidos() {
                       <StatusBadge status={hist.status || 'Em Análise'} />
                     </div>
 
-                    {/* Detalhes e Timeline de Acompanhamento */}
+                    {/* Detalhes, Timeline e Ações do Chamado */}
                     {isExpanded && (
                       <div className="bg-slate-50/90 rounded-2xl p-4 border border-slate-100 flex flex-col gap-3.5 animate-in fade-in duration-200">
                         {hist.observacao && (
                           <div className="bg-white rounded-xl p-3 border border-slate-200/70 flex flex-col gap-1">
                             <span className="text-[10px] font-extrabold uppercase text-slate-400">
-                              Detalhes do Pedido
+                              Resumo do Registro
                             </span>
                             <p className="text-xs text-slate-700 font-medium leading-relaxed whitespace-pre-wrap">
                               {hist.observacao}
@@ -466,10 +578,12 @@ export default function Pedidos() {
                           </div>
 
                           <div className={`flex items-center gap-2.5 font-semibold ${
-                            isFinalizado ? 'text-emerald-700' : 'text-amber-700'
+                            isFinalizado ? 'text-emerald-700' : isCancelado ? 'text-slate-400 line-through' : 'text-amber-700'
                           }`}>
                             {isFinalizado ? (
                               <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                            ) : isCancelado ? (
+                              <X size={15} className="text-slate-400 shrink-0" />
                             ) : (
                               <Clock size={15} className="text-amber-500 shrink-0 animate-pulse" />
                             )}
@@ -480,6 +594,13 @@ export default function Pedidos() {
                             <div className="flex items-center gap-2.5 text-slate-800 font-bold">
                               <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
                               <span>4. Decisão e atendimento concluídos</span>
+                            </div>
+                          )}
+
+                          {isCancelado && (
+                            <div className="flex items-center gap-2.5 text-rose-600 font-bold">
+                              <X size={15} className="text-rose-500 shrink-0" />
+                              <span>Solicitação cancelada</span>
                             </div>
                           )}
                         </div>
@@ -500,6 +621,31 @@ export default function Pedidos() {
                             </div>
                           </div>
                         )}
+
+                        {/* Botões de Ação Direta no Chamado */}
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-200/80">
+                          <a
+                            href={`https://wa.me/557135069426?text=${msgWhatsapp}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <PhoneCall size={13} className="text-emerald-600" />
+                            <span>Falar com Supervisão</span>
+                          </a>
+
+                          {isPendente && (
+                            <button
+                              type="button"
+                              disabled={cancelingId === hist.id}
+                              onClick={() => handleCancelarSolicitacao(hist.id)}
+                              className="py-2 px-3 bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              <Trash2 size={13} />
+                              <span>{cancelingId === hist.id ? 'Cancelando...' : 'Cancelar'}</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -508,8 +654,12 @@ export default function Pedidos() {
             ) : (
               <EmptyState
                 icon={FileText}
-                title="Nenhum Chamado Aberto"
-                description="Quando você enviar um pedido de troca, escala ou folga, ele aparecerá aqui com o status em tempo real."
+                title="Nenhum Chamado Encontrado"
+                description={
+                  abaHistorico === 'ANDAMENTO'
+                    ? 'Você não possui solicitações em análise no momento.'
+                    : 'Quando você enviar um pedido de troca, escala ou folga, ele aparecerá aqui com o status em tempo real.'
+                }
               />
             )}
           </div>
@@ -526,19 +676,18 @@ export default function Pedidos() {
           {/* ===================== FORM 1: TROCA DE CUIDADOR ===================== */}
           {activeModal === 'REMOVER' && (
             <>
+              {/* Seleção do Cuidador */}
               <div className="flex flex-col gap-1">
                 <Select
-                  label="1. Selecione o(a) Profissional ou Toque na Data Abaixo"
-                  placeholder="Escolha a cuidadora da escala ativa..."
+                  label="1. Cuidador(a) a ser Substituído(a)"
+                  placeholder="Escolha a profissional da escala ativa..."
                   value={selectedCuidador}
-                  onChange={(val) => {
-                    setSelectedCuidador(val ? Number(val) : null);
-                  }}
+                  onChange={(val) => setSelectedCuidador(val ? Number(val) : null)}
                   options={cuidadoresOptions}
                 />
               </div>
 
-              {/* Calendário Inteligente de Plantões */}
+              {/* Calendário de Sincronização */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between ml-1">
                   <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
@@ -653,55 +802,88 @@ export default function Pedidos() {
                       return days;
                     })()}
                   </div>
-
-                  <div className="flex items-center gap-4 mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-500 font-semibold px-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-md bg-pink-50 border border-pink-200 inline-block" />
-                      <span>Plantão na escala</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-md bg-[var(--color-brand-primary)] inline-block" />
-                      <span>Data selecionada</span>
-                    </div>
-                  </div>
                 </div>
               </div>
 
-              {/* Card de Plantão Identificado */}
-              {cuidadorSelecionadoObj && (
-                <div className="bg-pink-50/50 border border-pink-100 rounded-2xl p-3 flex items-center justify-between gap-3 animate-in fade-in duration-150">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <Avatar
-                      src={cuidadorSelecionadoObj.avatarSrc}
-                      name={cuidadorSelecionadoObj.nome}
-                      size="sm"
-                      variant="pink"
-                    />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[10px] font-extrabold uppercase text-[var(--color-brand-primary)] tracking-wider">
-                        Profissional Vinculado(a)
-                      </span>
-                      <span className="text-xs font-black text-slate-800 truncate">
-                        {cuidadorSelecionadoObj.nome}
-                      </span>
-                    </div>
-                  </div>
-
-                  {dataDesejada && (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white text-slate-700 border border-slate-200 shrink-0">
-                      Data: {dataDesejada.split('-').reverse().slice(0, 2).join('/')}
+              {/* Urgência da Transição */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 ml-1">
+                  Urgência da Troca
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setUrgenciaTroca('REGULAR')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                      urgenciaTroca === 'REGULAR'
+                        ? 'bg-pink-50/70 border-[var(--color-brand-primary)] text-slate-800 ring-2 ring-[var(--color-brand-primary)]/10'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Transição Regular
                     </span>
-                  )}
-                </div>
-              )}
+                    <span className="text-[10px] text-slate-500 font-medium leading-tight">
+                      Cumpre os plantões até a nova assumir
+                    </span>
+                  </button>
 
+                  <button
+                    type="button"
+                    onClick={() => setUrgenciaTroca('IMEDIATA')}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                      urgenciaTroca === 'IMEDIATA'
+                        ? 'bg-rose-50/70 border-rose-500 text-slate-800 ring-2 ring-rose-500/10'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <span className="text-xs font-extrabold text-rose-700 flex items-center gap-1.5">
+                      <ShieldAlert size={12} className="text-rose-600" />
+                      Imediata / Urgente
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium leading-tight">
+                      Não receber no próximo plantão
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Motivo da Substituição */}
               <Select
-                label="Motivo da Substituição"
+                label="Motivo Principal"
                 placeholder="Selecione o motivo..."
                 value={motivo}
                 onChange={(val) => setMotivo(String(val))}
                 options={MOTIVOS_TROCA.map((m) => ({ value: m, label: m }))}
               />
+
+              {/* Tags de Preferência de Perfil para a Nova Cuidadora */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 ml-1">
+                  Preferências para o Novo Perfil (Opcional)
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {TAGS_PREFERENCIA_PERFIL.map((tag) => {
+                    const selected = tagsPerfilSelecionadas.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTagPerfil(tag)}
+                        className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
+                          selected
+                            ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)] shadow-xs'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-pink-200'
+                        }`}
+                      >
+                        {selected && '✓ '}
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 ml-1">
@@ -709,7 +891,7 @@ export default function Pedidos() {
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Conte-nos mais detalhes para alinharmos o perfil ideal..."
+                  placeholder="Conte mais detalhes para alinharmos a profissional ideal..."
                   value={observacao}
                   onChange={(e) => setObservacao(e.target.value)}
                   className="w-full bg-white text-slate-800 text-sm font-medium rounded-2xl p-3.5 border border-slate-200/90 focus:border-[var(--color-brand-primary)] focus:ring-3 focus:ring-[var(--color-brand-primary)]/10 outline-none resize-none shadow-xs transition-all placeholder:text-slate-400"
@@ -728,6 +910,54 @@ export default function Pedidos() {
                 onChange={(val) => setTipoAjuste(String(val))}
                 options={TIPOS_AJUSTE_ESCALA.map((t) => ({ value: t, label: t }))}
               />
+
+              {/* Escopo: Definitivo vs Temporário */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 ml-1">
+                  Escopo da Mudança
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEscopoAjuste('DEFINITIVO')}
+                    className={`py-2 px-3 rounded-xl border text-xs font-black transition-all cursor-pointer ${
+                      escopoAjuste === 'DEFINITIVO'
+                        ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)] shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    💼 Definitivo / Contratual
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEscopoAjuste('TEMPORARIO')}
+                    className={`py-2 px-3 rounded-xl border text-xs font-black transition-all cursor-pointer ${
+                      escopoAjuste === 'TEMPORARIO'
+                        ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)] shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    ⏱️ Temporário / Pontual
+                  </button>
+                </div>
+              </div>
+
+              {/* Novos Horários de Entrada e Saída */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <Input
+                  label="Novo Horário Início"
+                  type="time"
+                  value={novoHorarioInicio}
+                  onChange={(e) => setNovoHorarioInicio(e.target.value)}
+                />
+                <Input
+                  label="Novo Horário Término"
+                  type="time"
+                  value={novoHorarioFim}
+                  onChange={(e) => setNovoHorarioFim(e.target.value)}
+                />
+              </div>
 
               <Select
                 label="Profissional Envolvido (Opcional)"
@@ -749,11 +979,11 @@ export default function Pedidos() {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 ml-1">
-                  Detalhes do Ajuste de Horário / Dias
+                  Detalhes Adicionais
                 </label>
                 <textarea
-                  rows={3}
-                  placeholder="Ex: Gostaria de alterar o horário de início para às 08:00 a partir da próxima semana..."
+                  rows={2}
+                  placeholder="Ex: Gostaria de alterar o horário aos sábados e domingos..."
                   value={observacao}
                   onChange={(e) => setObservacao(e.target.value)}
                   className="w-full bg-white text-slate-800 text-sm font-medium rounded-2xl p-3.5 border border-slate-200/90 focus:border-[var(--color-brand-primary)] focus:ring-3 focus:ring-[var(--color-brand-primary)]/10 outline-none resize-none shadow-xs transition-all placeholder:text-slate-400"
@@ -766,7 +996,7 @@ export default function Pedidos() {
           {activeModal === 'FOLGA' && (
             <>
               <Select
-                label="1. Escolha a Cuidadora ou Toque nos Dias Abaixo"
+                label="1. Escolha a Cuidadora Titular"
                 placeholder="Selecione a profissional..."
                 value={selectedCuidador}
                 onChange={(val) => {
@@ -776,14 +1006,15 @@ export default function Pedidos() {
                 options={cuidadoresOptions}
               />
 
+              {/* Calendário de Dias de Folga */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between ml-1">
                   <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                    Dias de Folga / Suspensão
+                    Toque nos Dias de Plantão para Folga
                   </label>
                   {datasFolga.length > 0 && (
                     <span className="text-[11px] font-bold text-[var(--color-brand-primary)]">
-                      {datasFolga.length} {datasFolga.length === 1 ? 'dia selecionado' : 'dias selecionados'}
+                      {datasFolga.length} {datasFolga.length === 1 ? 'dia' : 'dias'}
                     </span>
                   )}
                 </div>
@@ -882,47 +1113,75 @@ export default function Pedidos() {
                       return days;
                     })()}
                   </div>
-
-                  <div className="flex items-center gap-4 mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-500 font-semibold px-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-md bg-pink-50 border border-pink-200 inline-block" />
-                      <span>Plantão disponível</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-md bg-[var(--color-brand-primary)] inline-block" />
-                      <span>Folga selecionada</span>
-                    </div>
-                  </div>
                 </div>
               </div>
 
-              {/* Resumo da Cuidadora Selecionada */}
-              {cuidadorSelecionadoObj && (
-                <div className="bg-pink-50/50 border border-pink-100 rounded-2xl p-3 flex items-center justify-between gap-3 animate-in fade-in duration-150">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <Avatar
-                      src={cuidadorSelecionadoObj.avatarSrc}
-                      name={cuidadorSelecionadoObj.nome}
-                      size="sm"
-                      variant="pink"
-                    />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[10px] font-extrabold uppercase text-[var(--color-brand-primary)] tracking-wider">
-                        Cuidadora da Escala
+              {/* Pílulas de Dias Selecionados com Botão X */}
+              {datasFolga.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 p-2 bg-pink-50/40 rounded-2xl border border-pink-100">
+                  {datasFolga.map((dIso) => {
+                    const dObj = new Date(dIso);
+                    const label = `${String(dObj.getDate()).padStart(2, '0')}/${String(dObj.getMonth() + 1).padStart(2, '0')}`;
+                    return (
+                      <span
+                        key={dIso}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-white text-[var(--color-brand-primary)] text-xs font-extrabold rounded-full border border-pink-200 shadow-2xs"
+                      >
+                        <span>📅 {label}</span>
+                        <button
+                          type="button"
+                          onClick={() => setDatasFolga(datasFolga.filter((d) => d !== dIso))}
+                          className="hover:text-rose-700 cursor-pointer p-0.5"
+                        >
+                          <X size={12} />
+                        </button>
                       </span>
-                      <span className="text-xs font-black text-slate-800 truncate">
-                        {cuidadorSelecionadoObj.nome}
-                      </span>
-                    </div>
-                  </div>
-
-                  {datasFolga.length > 0 && (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white text-slate-700 border border-slate-200 shrink-0">
-                      {datasFolga.length} {datasFolga.length === 1 ? 'dia' : 'dias'}
-                    </span>
-                  )}
+                    );
+                  })}
                 </div>
               )}
+
+              {/* Opção Crítica: Cobertura com Cuidadora Substituta */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 ml-1">
+                  Necessidade de Cobertura
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPrecisaSubstituta(true)}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                      precisaSubstituta
+                        ? 'bg-pink-50/70 border-[var(--color-brand-primary)] text-slate-800 ring-2 ring-[var(--color-brand-primary)]/10'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <span className="text-xs font-extrabold text-[var(--color-brand-primary)] flex items-center gap-1.5">
+                      👩‍⚕️ Enviar Substituta
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium leading-tight">
+                      Coordenação escala folguista para cobrir
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPrecisaSubstituta(false)}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
+                      !precisaSubstituta
+                        ? 'bg-pink-50/70 border-[var(--color-brand-primary)] text-slate-800 ring-2 ring-[var(--color-brand-primary)]/10'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                      🏠 Apenas Suspender
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium leading-tight">
+                      Família cuidará / Idoso ausente
+                    </span>
+                  </button>
+                </div>
+              </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 ml-1">
@@ -947,12 +1206,23 @@ export default function Pedidos() {
                 placeholder="Selecione a categoria..."
                 value={categoria}
                 onChange={(val) => setCategoria(String(val))}
-                options={CATEGORIAS_OUTRA.map((c) => ({ value: c, label: c }))}
+                options={CATEGORIAS_OUTRA.map((c) => ({ value: c.label, label: c.label }))}
               />
+
+              {/* Indicador de SLA da Categoria */}
+              {categoria && (
+                <div className="bg-cyan-50/70 border border-cyan-200/80 rounded-2xl p-3 flex items-center gap-2.5 text-xs text-cyan-900 font-semibold animate-in fade-in duration-150">
+                  <Clock3 size={16} className="text-cyan-700 shrink-0" />
+                  <span>
+                    {CATEGORIAS_OUTRA.find((c) => c.label === categoria)?.sla ||
+                      'Encaminhado diretamente para a coordenação responsável.'}
+                  </span>
+                </div>
+              )}
 
               <Input
                 label="Título / Resumo"
-                placeholder="Ex: Dúvida sobre novo medicamento..."
+                placeholder="Ex: Dúvida sobre novo medicamento prescrito..."
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
               />
