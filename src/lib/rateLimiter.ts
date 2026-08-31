@@ -1,6 +1,11 @@
 /**
  * src/lib/rateLimiter.ts
  * Rate Limiter em memória para endpoints sensíveis (ex: login).
+ *
+ * IMPORTANTE: setInterval de top-level foi removido — ele causa crash em
+ * Serverless Functions (Vercel/AWS Lambda) pois o ambiente não persiste entre
+ * invocações e timers globais são inválidos nesse contexto.
+ * A limpeza é feita de forma lazy dentro de checkRateLimit().
  */
 
 interface AttemptRecord {
@@ -12,19 +17,19 @@ interface AttemptRecord {
 
 const store = new Map<string, AttemptRecord>()
 
-const MAX_ATTEMPTS = 100 // Limite ampliado para permitir testes fluidos
+const MAX_ATTEMPTS = 100
 const WINDOW_MS = 15 * 60 * 1000
-const BLOCK_DURATION_MS = 60 * 1000 // 1 minuto apenas em vez de 15 minutos
+const BLOCK_DURATION_MS = 60 * 1000 // 1 minuto
 
-// Limpeza periódica
-setInterval(() => {
+// Limpeza lazy — chamada internamente; evita setInterval no top-level
+function cleanupExpiredEntries(): void {
   const now = Date.now()
   for (const [key, record] of store.entries()) {
     if (now - record.firstAttempt > WINDOW_MS * 2) {
       store.delete(key)
     }
   }
-}, 30 * 1000)
+}
 
 export interface RateLimitResult {
   allowed: boolean
@@ -36,6 +41,12 @@ export function checkRateLimit(key: string): RateLimitResult {
   // Em desenvolvimento, nunca bloqueia para facilitar testes e homologação
   if (process.env.NODE_ENV === 'development') {
     return { allowed: true, remaining: 999 }
+  }
+
+  // Limpeza lazy: executa de forma não-bloqueante com probabilidade baixa
+  // para não impactar performance em produção
+  if (Math.random() < 0.05) {
+    cleanupExpiredEntries()
   }
 
   const now = Date.now()
@@ -85,3 +96,4 @@ export function resetRateLimit(key?: string): void {
     store.clear()
   }
 }
+

@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
     const inicioDoDia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
     const fimDoDia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + 1)
 
-    // Busca serviços e boletos pendentes em paralelo
-    const [servicosDoPaciente, boletosPendentes] = await Promise.all([
+    // Busca serviços, boletos pendentes e ficha mais recente do paciente em paralelo
+    const [servicosDoPaciente, boletosPendentes, fichaRecente] = await Promise.all([
       prisma.servico.findMany({
         where: { Codcli: pacientePrincipal.CodCli },
         select: { Pedido: true, HoraInicio: true, HoraSaida: true },
@@ -48,6 +48,11 @@ export async function GET(request: NextRequest) {
           CodCli: responsavelId,
           OR: [{ Status: null }, { Status: { in: ['A', 'E'] } }],
         },
+      }),
+      prisma.fichaAnamnese.findFirst({
+        where: { CodCli: pacientePrincipal.CodCli },
+        orderBy: { DataCriacao: 'desc' },
+        select: { ScoreSaude: true, DataCriacao: true },
       }),
     ])
 
@@ -92,6 +97,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Score de Vitalidade e data da última evolução clínica
+    const scoreVitalidade = fichaRecente?.ScoreSaude ?? null
+    const ultimaEvolucao = fichaRecente?.DataCriacao
+      ? fichaRecente.DataCriacao.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        }) + ' às ' + fichaRecente.DataCriacao.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : null
+
     return NextResponse.json({
       sucesso: true,
       responsavel,
@@ -99,6 +117,8 @@ export async function GET(request: NextRequest) {
       pacientes: listaPacientes,
       cuidadorHoje,
       notificacoes: { boletosPendentes },
+      scoreVitalidade,
+      ultimaEvolucao,
     })
   } catch (error) {
     console.error('[DASHBOARD] Erro:', error instanceof Error ? error.message : error)

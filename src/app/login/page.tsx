@@ -95,7 +95,7 @@ export default function Login() {
             <Input
               label="Senha ou Data de Nascimento"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Ex: 27/12/1940 ou sua senha"
+              placeholder="Ex: 27/12/1940 ou 27121940"
               value={senha}
               onChange={(e) => {
                 setSenha(e.target.value);
@@ -118,7 +118,7 @@ export default function Login() {
 
             <div className="flex items-center justify-between mt-1 px-0.5">
               <span className="text-[11px] text-slate-400 font-medium">
-                Pode usar a data (DD/MM/AAAA)
+                Com ou sem barras (DD/MM/AAAA)
               </span>
               <Link
                 href="/esqueci-senha"

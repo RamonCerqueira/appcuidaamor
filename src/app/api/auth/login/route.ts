@@ -14,7 +14,36 @@ import { signToken, AUTH_COOKIE } from '@/lib/auth'
 import { checkRateLimit, resetRateLimit } from '@/lib/rateLimiter'
 
 function parseDateInput(input: string): { day: number; month: number; year: number; year2Digits: number } | null {
-  const clean = input.replace(/\D/g, '')
+  if (!input) return null
+  const trimmed = input.trim()
+
+  // 1. Tenta dividir por delimitadores como "/", "-", ".", " " (ex: "27/12/1940", "5/3/62", "27.12.1940")
+  const parts = trimmed.split(/[/.\-\s]+/).map((p) => p.trim()).filter(Boolean)
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      // YYYY-MM-DD
+      const year = parseInt(parts[0], 10)
+      const month = parseInt(parts[1], 10)
+      const day = parseInt(parts[2], 10)
+      if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+        return { day, month, year, year2Digits: year % 100 }
+      }
+    } else {
+      // DD/MM/YYYY ou DD/MM/YY
+      const day = parseInt(parts[0], 10)
+      const month = parseInt(parts[1], 10)
+      let year = parseInt(parts[2], 10)
+      if (year < 100) {
+        year = year > 30 ? 1900 + year : 2000 + year
+      }
+      if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+        return { day, month, year, year2Digits: year % 100 }
+      }
+    }
+  }
+
+  // 2. Extrai apenas dígitos contínuos (ignorando completamente barras e qualquer outro caractere)
+  const clean = trimmed.replace(/\D/g, '')
 
   if (clean.length === 8) {
     // DDMMAAAA (ex: 27121940)
@@ -23,6 +52,25 @@ function parseDateInput(input: string): { day: number; month: number; year: numb
     const year = parseInt(clean.slice(4, 8), 10)
     if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
       return { day, month, year, year2Digits: year % 100 }
+    }
+  }
+
+  if (clean.length === 7) {
+    // D-MM-AAAA (ex: 5031962 -> 05/03/1962) ou DD-M-AAAA (ex: 2731962 -> 27/03/1962)
+    // Tenta 1 dígito dia + 2 dígitos mês + 4 dígitos ano
+    const d1 = parseInt(clean.slice(0, 1), 10)
+    const m1 = parseInt(clean.slice(1, 3), 10)
+    const y1 = parseInt(clean.slice(3, 7), 10)
+    if (d1 >= 1 && d1 <= 9 && m1 >= 1 && m1 <= 12) {
+      return { day: d1, month: m1, year: y1, year2Digits: y1 % 100 }
+    }
+
+    // Tenta 2 dígitos dia + 1 dígito mês + 4 dígitos ano
+    const d2 = parseInt(clean.slice(0, 2), 10)
+    const m2 = parseInt(clean.slice(2, 3), 10)
+    const y2 = parseInt(clean.slice(3, 7), 10)
+    if (d2 >= 1 && d2 <= 31 && m2 >= 1 && m2 <= 9) {
+      return { day: d2, month: m2, year: y2, year2Digits: y2 % 100 }
     }
   }
 
@@ -37,23 +85,12 @@ function parseDateInput(input: string): { day: number; month: number; year: numb
     }
   }
 
-  const parts = input.split(/[/.-]/).map((p) => p.trim()).filter(Boolean)
-  if (parts.length === 3) {
-    if (parts[0].length === 4) {
-      // YYYY-MM-DD
-      const year = parseInt(parts[0], 10)
-      const month = parseInt(parts[1], 10)
-      const day = parseInt(parts[2], 10)
-      return { day, month, year, year2Digits: year % 100 }
-    } else {
-      // DD-MM-YYYY
-      const day = parseInt(parts[0], 10)
-      const month = parseInt(parts[1], 10)
-      let year = parseInt(parts[2], 10)
-      if (year < 100) {
-        year = year > 30 ? 1900 + year : 2000 + year
-      }
-      return { day, month, year, year2Digits: year % 100 }
+  if (clean.length === 4) {
+    // DDMM (sem ano)
+    const day = parseInt(clean.slice(0, 2), 10)
+    const month = parseInt(clean.slice(2, 4), 10)
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return { day, month, year: 0, year2Digits: 0 }
     }
   }
 
@@ -69,14 +106,21 @@ function matchesBirthDate(
   if (!dbDia || !dbMes) return false
   if (dbDia !== parsed.day || dbMes !== parsed.month) return false
 
-  if (!dbAno) return true // Se o banco não tem ano gravado, valida apenas dia e mês
+  // Se o banco não tem ano gravado ou o usuário não informou ano (year === 0), dia e mês são suficientes
+  if (!dbAno || parsed.year === 0) return true
+
+  const dbAnoNum = typeof dbAno === 'number' ? dbAno : parseInt(String(dbAno), 10)
+  const dbAno2Digits = dbAnoNum % 100
 
   // Compara ano com 4 dígitos ou 2 dígitos (ex: 1940 vs 40)
   return (
-    dbAno === parsed.year ||
-    dbAno === parsed.year2Digits ||
-    dbAno + 1900 === parsed.year ||
-    dbAno + 2000 === parsed.year
+    dbAnoNum === parsed.year ||
+    dbAnoNum === parsed.year2Digits ||
+    dbAno2Digits === parsed.year2Digits ||
+    dbAnoNum + 1900 === parsed.year ||
+    dbAnoNum + 2000 === parsed.year ||
+    (dbAnoNum > 1900 && dbAnoNum - 1900 === parsed.year2Digits) ||
+    (dbAnoNum > 2000 && dbAnoNum - 2000 === parsed.year2Digits)
   )
 }
 
@@ -224,9 +268,14 @@ export async function POST(request: NextRequest) {
         if (dbSenha?.Senha) {
           const senhaBanco = dbSenha.Senha.trim()
           const senhaEnviada = String(senha).trim()
+          const cleanBanco = senhaBanco.replace(/\D/g, '')
+          const cleanEnviada = senhaEnviada.replace(/\D/g, '')
+
           if (
             senhaBanco === senhaEnviada ||
-            (senhaBanco.length === 4 && senhaEnviada.startsWith(senhaBanco))
+            (cleanBanco.length >= 4 && cleanEnviada.length >= 4 && cleanBanco === cleanEnviada) ||
+            (senhaBanco.length === 4 && senhaEnviada.startsWith(senhaBanco)) ||
+            (cleanBanco.length === 4 && cleanEnviada.startsWith(cleanBanco))
           ) {
             clienteEncontrado = c
             credencialValida = true

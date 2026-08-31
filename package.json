@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "cap:build": "npm run build && npx cap sync"
   },
   "dependencies": {

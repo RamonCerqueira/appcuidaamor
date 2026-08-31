@@ -65,6 +65,8 @@ export default function Home() {
   const paciente = data?.paciente;
   const cuidador = data?.cuidadorHoje;
   const boletosPendentes = data?.notificacoes?.boletosPendentes || 0;
+  const scoreVitalidade: number = data?.scoreVitalidade ?? 86;
+  const ultimaEvolucao: string = data?.ultimaEvolucao ?? 'Sem registro recente';
 
   const primeiroNome = responsavel.split(' ')[0];
   const userInitials = responsavel
@@ -91,8 +93,8 @@ export default function Home() {
         <MeuFamiliarAgora
           paciente={paciente}
           cuidador={cuidador}
-          scoreVitalidade={86}
-          ultimaAtualizacao="Hoje às 14:30"
+          scoreVitalidade={scoreVitalidade}
+          ultimaAtualizacao={ultimaEvolucao}
         />
 
         {/* 2. Diário / Timeline do Cuidado de Hoje */}

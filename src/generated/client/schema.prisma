@@ -1,7 +1,7 @@
 generator client {
   provider      = "prisma-client-js"
   output        = "../src/generated/client"
-  binaryTargets = ["native", "windows"]
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.0.x", "debian-openssl-3.0.x", "windows"]
 }
 
 datasource db {
@@ -2650,6 +2650,7 @@ model FichaAnamnese {
   Observacoes                 String?                     @db.NVarChar(Max)
   DataCriacao                 DateTime?                   @default(now(), map: "DF__FichaAnam__DataC__38CF4036") @db.DateTime
   DataAlteracao               DateTime?                   @db.DateTime
+  ScoreSaude                  Int?
   FichaAnamnese_Medicamento   FichaAnamnese_Medicamento[]
 }
 
