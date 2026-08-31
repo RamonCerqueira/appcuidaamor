@@ -78,9 +78,7 @@ export default function Home() {
     .toUpperCase() || 'FS';
 
   return (
-    <div className="relative flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36 overflow-x-hidden">
-      {/* Fundo degradê rosa pastel suave no topo, sumindo suavemente no bottom */}
-      <div className="absolute top-0 left-0 right-0 h-[420px] bg-gradient-to-b from-pink-100/70 via-pink-50/40 to-transparent pointer-events-none z-0" />
+    <div className="relative flex flex-col min-h-screen bg-transparent w-full pb-36 overflow-x-hidden">
 
       <div className="relative z-10">
         <Header

@@ -346,7 +346,7 @@ export default function Pedidos() {
   }).length;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
+    <div className="flex flex-col min-h-screen bg-transparent w-full pb-36">
       <Header title="Solicitações" subtitle="Central de Atendimento" showBack />
 
       {successToast && (

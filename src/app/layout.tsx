@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans, Outfit } from 'next/font/google';
 import './globals.css';
 import BottomNav from '@/components/BottomNav';
+import { AmbientBackground } from '@/components/ui/AmbientBackground';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -45,7 +46,10 @@ export default function RootLayout({
     <html lang="pt-BR" className={`${plusJakartaSans.variable} ${outfit.variable}`}>
       <body className="antialiased min-h-screen bg-slate-900 md:py-4 flex justify-center items-start">
         <div className="w-full max-w-[480px] min-h-screen md:min-h-[920px] md:max-h-[960px] md:rounded-[2.5rem] bg-[var(--color-brand-background)] shadow-2xl relative mx-auto flex flex-col overflow-x-hidden md:border md:border-slate-800 md:overflow-y-auto scrollbar-hide">
-          {children}
+          <AmbientBackground />
+          <div className="relative z-10 flex flex-col flex-1">
+            {children}
+          </div>
           <BottomNav />
         </div>
       </body>

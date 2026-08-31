@@ -110,7 +110,7 @@ export default function Suporte() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
+    <div className="flex flex-col min-h-screen bg-transparent w-full pb-36">
       <Header title="Central de Ajuda" subtitle="Suporte e Emergência" showBack />
 
       <main className="flex-1 px-5 pt-5 flex flex-col gap-6">

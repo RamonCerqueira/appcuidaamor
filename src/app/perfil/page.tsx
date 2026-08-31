@@ -52,7 +52,7 @@ export default function Perfil() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
+      <div className="flex flex-col min-h-screen bg-transparent w-full pb-36">
         <Header title="Minha Conta" subtitle="Perfil" showBack />
         <main className="flex-1 px-5 pt-6 flex flex-col items-center gap-5">
           <Skeleton className="w-20 h-20" variant="circle" />
@@ -78,7 +78,7 @@ export default function Perfil() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--color-brand-background)] w-full pb-36">
+    <div className="flex flex-col min-h-screen bg-transparent w-full pb-36">
       <Header
         title="Minha Conta"
         subtitle="Cadastro"
