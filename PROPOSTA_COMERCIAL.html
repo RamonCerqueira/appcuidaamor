@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Proposta de Desenvolvimento — AppCuidaAmor</title>
+  <title>Proposta Comercial de Desenvolvimento — AppCuidaAmor</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
     :root {
       --pink: #E0428C;
+      --pink-dark: #C02672;
       --pink-light: #FDE8F2;
       --teal: #2DA3B8;
+      --teal-light: #F0F9FB;
       --dark: #0F172A;
       --slate: #334155;
       --muted: #64748B;
@@ -18,30 +21,119 @@
       --bg: #F8FAFC;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: white;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0F172A;
       color: var(--dark);
-      line-height: 1.6;
+      line-height: 1.5;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── FLOATING ACTION BAR (SCREEN ONLY) ── */
+    .screen-toolbar {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 100px;
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    .screen-toolbar-title {
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .screen-toolbar-title span {
+      color: var(--pink);
+    }
+
+    .print-btn {
+      background: linear-gradient(135deg, var(--pink), var(--pink-dark));
+      color: white;
+      border: none;
+      border-radius: 100px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(224, 66, 140, 0.35);
+    }
+
+    .print-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(224, 66, 140, 0.45);
+    }
+
+    /* ── BASE PAGE SETUP (A4 EXACT DIMENSIONS) ── */
+    .document-container {
+      padding: 70px 0 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .page-sheet {
+      width: 210mm;
+      height: 297mm;
+      min-height: 297mm;
+      max-height: 297mm;
+      background: white;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-sizing: border-box;
+    }
+
+    .page-inner {
+      padding: 14mm 16mm 12mm 16mm;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-sizing: border-box;
+    }
+
+    .page-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
 
     /* ── COVER ── */
-    .cover {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      overflow: hidden;
+    .cover-sheet {
+      padding: 0;
       background: white;
-      page-break-after: always;
     }
 
     .cover-top-bar {
-      height: 6px;
+      height: 7px;
+      width: 100%;
       background: linear-gradient(90deg, var(--pink), var(--teal));
     }
 
@@ -49,8 +141,11 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding: 80px 72px 60px;
+      justify-content: space-between;
+      padding: 32mm 18mm 18mm;
+      position: relative;
+      z-index: 2;
+      box-sizing: border-box;
     }
 
     .cover-badge {
@@ -58,25 +153,25 @@
       align-items: center;
       gap: 8px;
       background: var(--pink-light);
-      border: 1px solid rgba(224,66,140,0.2);
+      border: 1px solid rgba(224, 66, 140, 0.25);
       border-radius: 100px;
-      padding: 6px 16px;
+      padding: 6px 14px;
       font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.14em;
+      font-weight: 800;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--pink);
       width: fit-content;
-      margin-bottom: 40px;
+      margin-bottom: 24px;
     }
 
     .cover-title {
-      font-size: 52px;
+      font-size: 44px;
       font-weight: 900;
       letter-spacing: -0.03em;
-      line-height: 1.08;
+      line-height: 1.1;
       color: var(--dark);
-      margin-bottom: 8px;
+      margin-bottom: 16px;
     }
 
     .cover-title span {
@@ -84,73 +179,79 @@
     }
 
     .cover-subtitle {
-      font-size: 20px;
+      font-size: 16.5px;
       font-weight: 400;
       color: var(--muted);
-      margin-bottom: 60px;
-      line-height: 1.5;
+      line-height: 1.55;
+      max-width: 90%;
     }
 
     .cover-meta {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
+      gap: 20px;
       margin-top: auto;
+      padding-top: 32px;
     }
 
     .cover-meta-item {
       border-top: 2px solid var(--border);
-      padding-top: 16px;
+      padding-top: 14px;
     }
 
     .cover-meta-label {
       font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.16em;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .cover-meta-value {
-      font-size: 15px;
+      font-size: 13.5px;
       font-weight: 700;
       color: var(--dark);
+      line-height: 1.35;
     }
 
     .cover-orb-1 {
       position: absolute;
-      top: -100px;
+      top: -80px;
       right: -80px;
-      width: 500px;
-      height: 500px;
+      width: 420px;
+      height: 420px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(224,66,140,0.08) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(224, 66, 140, 0.07) 0%, transparent 70%);
       pointer-events: none;
+      z-index: 1;
     }
 
     .cover-orb-2 {
       position: absolute;
-      bottom: -60px;
-      right: 200px;
-      width: 300px;
-      height: 300px;
+      bottom: -40px;
+      right: 120px;
+      width: 320px;
+      height: 320px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(45,163,184,0.07) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(45, 163, 184, 0.07) 0%, transparent 70%);
       pointer-events: none;
+      z-index: 1;
     }
 
     .cover-footer {
-      padding: 24px 72px;
+      padding: 16px 18mm;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-top: 1px solid var(--border);
+      background: white;
+      z-index: 2;
     }
 
     .cover-footer-brand {
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       color: var(--dark);
     }
 
@@ -159,33 +260,24 @@
     }
 
     .cover-footer-date {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
     }
-
-    /* ── PAGE ── */
-    .page {
-      padding: 64px 72px;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    .page-break { page-break-before: always; }
 
     /* ── SECTION HEADER ── */
     .section-header {
       display: flex;
       align-items: center;
-      gap: 14px;
-      margin-bottom: 36px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1.5px solid var(--border);
     }
 
     .section-number {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       background: var(--pink-light);
       display: flex;
       align-items: center;
@@ -197,7 +289,7 @@
     }
 
     .section-title {
-      font-size: 22px;
+      font-size: 19px;
       font-weight: 800;
       letter-spacing: -0.02em;
       color: var(--dark);
@@ -206,31 +298,35 @@
     /* ── SUMMARY BOX ── */
     .summary-box {
       background: linear-gradient(135deg, #FDE8F2 0%, #F0F9FB 100%);
-      border: 1px solid rgba(224,66,140,0.15);
-      border-radius: 16px;
-      padding: 32px;
-      margin-bottom: 40px;
+      border: 1px solid rgba(224, 66, 140, 0.18);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
     }
 
     .summary-box p {
-      font-size: 15px;
+      font-size: 13px;
       color: var(--slate);
-      line-height: 1.75;
+      line-height: 1.65;
+    }
+
+    .summary-box p:not(:last-child) {
+      margin-bottom: 10px;
     }
 
     /* ── HIGHLIGHT METRICS ── */
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-bottom: 48px;
+      gap: 14px;
+      margin-bottom: 24px;
     }
 
     .metric-card {
       background: white;
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px;
+      border-radius: 12px;
+      padding: 16px 18px;
     }
 
     .metric-card.accent {
@@ -238,128 +334,205 @@
       border-color: var(--pink);
     }
 
-    .metric-card.accent .metric-label { color: rgba(255,255,255,0.7); }
-    .metric-card.accent .metric-value { color: white; }
+    .metric-card.accent .metric-label {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .metric-card.accent .metric-value {
+      color: white;
+    }
 
     .metric-label {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .metric-value {
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 900;
       letter-spacing: -0.03em;
       color: var(--dark);
-      line-height: 1;
+      line-height: 1.1;
     }
 
     .metric-sub {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--muted);
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
-    .metric-card.accent .metric-sub { color: rgba(255,255,255,0.6); }
+    .metric-card.accent .metric-sub {
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 600;
+    }
+
+    /* ── TECH GRID ── */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+      margin-bottom: 16px;
+    }
+
+    .tech-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 10px;
+      text-align: center;
+      background: var(--bg);
+    }
+
+    .tech-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 2px;
+    }
+
+    .tech-role {
+      font-size: 10px;
+      color: var(--muted);
+    }
 
     /* ── PHASE TABLE ── */
     .phase-table {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .phase-table thead th {
       background: var(--dark);
       color: white;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 12px 16px;
+      padding: 9px 12px;
       text-align: left;
     }
 
-    .phase-table thead th:first-child { border-radius: 10px 0 0 0; }
-    .phase-table thead th:last-child { border-radius: 0 10px 0 0; text-align: right; }
-
-    .phase-table tbody tr:nth-child(even) td { background: var(--bg); }
-
-    .phase-table tbody td {
-      padding: 14px 16px;
-      font-size: 14px;
-      color: var(--slate);
-      border-bottom: 1px solid var(--border);
-      vertical-align: top;
+    .phase-table thead th:first-child {
+      border-radius: 8px 0 0 0;
     }
 
-    .phase-table tbody td:last-child { text-align: right; font-weight: 700; color: var(--dark); white-space: nowrap; }
-    .phase-table tbody td:nth-child(3) { text-align: center; font-weight: 600; color: var(--dark); }
+    .phase-table thead th:last-child {
+      border-radius: 0 8px 0 0;
+      text-align: right;
+    }
+
+    .phase-table tbody tr:nth-child(even) td {
+      background: var(--bg);
+    }
+
+    .phase-table tbody td {
+      padding: 7.5px 12px;
+      font-size: 12px;
+      color: var(--slate);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .phase-table tbody td:last-child {
+      text-align: right;
+      font-weight: 700;
+      color: var(--dark);
+      white-space: nowrap;
+    }
+
+    .phase-table tbody td:nth-child(3) {
+      text-align: center;
+      font-weight: 600;
+      color: var(--dark);
+    }
 
     .phase-tag {
       display: inline-block;
       background: var(--pink-light);
       color: var(--pink);
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: 6px;
-      margin-bottom: 4px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 2px;
     }
 
-    .phase-name { font-weight: 700; color: var(--dark); margin-bottom: 3px; }
-    .phase-desc { font-size: 12px; color: var(--muted); }
+    .phase-name {
+      font-weight: 700;
+      color: var(--dark);
+      font-size: 12px;
+    }
+
+    .phase-desc {
+      font-size: 10.5px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
 
     .phase-table tfoot td {
       background: var(--dark);
       color: white;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 800;
-      padding: 16px;
+      padding: 10px 12px;
     }
 
-    .phase-table tfoot td:first-child { border-radius: 0 0 0 10px; }
-    .phase-table tfoot td:last-child { border-radius: 0 0 10px 0; text-align: right; font-size: 16px; }
+    .phase-table tfoot td:first-child {
+      border-radius: 0 0 0 8px;
+    }
+
+    .phase-table tfoot td:last-child {
+      border-radius: 0 0 8px 0;
+      text-align: right;
+      font-size: 13px;
+    }
 
     /* ── TASK LIST ── */
     .task-phase {
-      margin-bottom: 32px;
+      margin-bottom: 12px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .task-phase:last-child {
+      margin-bottom: 0;
     }
 
     .task-phase-header {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px 10px 0 0;
-      padding: 14px 20px;
+      border-radius: 8px 8px 0 0;
+      padding: 8px 14px;
     }
 
     .task-phase-dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--pink);
       flex-shrink: 0;
     }
 
     .task-phase-name {
-      font-size: 14px;
+      font-size: 12.5px;
       font-weight: 800;
       color: var(--dark);
       flex: 1;
     }
 
     .task-phase-hours {
-      font-size: 13px;
+      font-size: 11.5px;
       font-weight: 700;
       color: var(--muted);
     }
@@ -367,100 +540,141 @@
     .task-list {
       border: 1px solid var(--border);
       border-top: none;
-      border-radius: 0 0 10px 10px;
+      border-radius: 0 0 8px 8px;
       overflow: hidden;
     }
 
     .task-item {
       display: grid;
-      grid-template-columns: 1fr 60px 100px;
-      padding: 12px 20px;
+      grid-template-columns: 1fr 50px 85px;
+      padding: 5.5px 14px;
       border-bottom: 1px solid var(--border);
-      font-size: 13px;
+      font-size: 11.5px;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
-    .task-item:last-child { border-bottom: none; }
-    .task-item:nth-child(even) { background: #FAFAFA; }
+    .task-item:last-child {
+      border-bottom: none;
+    }
 
-    .task-name { color: var(--slate); }
-    .task-hours { text-align: center; font-weight: 700; color: var(--dark); }
-    .task-cost { text-align: right; color: var(--muted); font-size: 12px; }
+    .task-item:nth-child(even) {
+      background: #FAFAFA;
+    }
+
+    .task-name {
+      color: var(--slate);
+      line-height: 1.35;
+    }
+
+    .task-hours {
+      text-align: center;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .task-cost {
+      text-align: right;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
 
     /* ── PAYMENT TABLE ── */
     .payment-table {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      margin: 24px 0;
+      margin: 12px 0 16px;
     }
 
     .payment-table th {
       background: var(--dark);
       color: white;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 12px 16px;
+      padding: 8px 12px;
       text-align: left;
     }
 
-    .payment-table th:first-child { border-radius: 10px 0 0 0; }
-    .payment-table th:last-child { border-radius: 0 10px 0 0; text-align: right; }
+    .payment-table th:first-child {
+      border-radius: 8px 0 0 0;
+    }
+
+    .payment-table th:last-child {
+      border-radius: 0 8px 0 0;
+      text-align: right;
+    }
 
     .payment-table td {
-      padding: 14px 16px;
-      font-size: 14px;
+      padding: 7px 12px;
+      font-size: 11.5px;
       color: var(--slate);
       border-bottom: 1px solid var(--border);
     }
 
-    .payment-table td:last-child { text-align: right; font-weight: 700; }
-    .payment-table tbody tr:nth-child(even) td { background: var(--bg); }
+    .payment-table td:last-child {
+      text-align: right;
+      font-weight: 700;
+    }
+
+    .payment-table tbody tr:nth-child(even) td {
+      background: var(--bg);
+    }
 
     .payment-table tfoot td {
       background: var(--pink);
       color: white;
       font-weight: 800;
-      font-size: 16px;
-      padding: 18px 16px;
+      font-size: 13px;
+      padding: 10px 12px;
     }
 
-    .payment-table tfoot td:first-child { border-radius: 0 0 0 10px; }
-    .payment-table tfoot td:last-child { border-radius: 0 0 10px 0; text-align: right; font-size: 20px; }
+    .payment-table tfoot td:first-child {
+      border-radius: 0 0 0 8px;
+    }
+
+    .payment-table tfoot td:last-child {
+      border-radius: 0 0 8px 0;
+      text-align: right;
+      font-size: 14px;
+    }
 
     /* ── HIGHLIGHT BOX ── */
     .highlight-box {
-      background: var(--pink);
-      border-radius: 16px;
-      padding: 32px;
+      background: linear-gradient(135deg, var(--pink), var(--pink-dark));
+      border-radius: 12px;
+      padding: 16px 20px;
       color: white;
-      margin: 32px 0;
+      margin-bottom: 14px;
     }
 
     .highlight-box h3 {
-      font-size: 20px;
+      font-size: 14px;
       font-weight: 800;
-      margin-bottom: 12px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .highlight-box p {
-      font-size: 14px;
-      opacity: 0.85;
-      line-height: 1.7;
+      font-size: 12px;
+      opacity: 0.9;
+      line-height: 1.5;
     }
 
     .highlight-box ul {
-      margin-top: 12px;
-      padding-left: 20px;
+      margin-top: 8px;
+      padding-left: 18px;
     }
 
     .highlight-box ul li {
-      font-size: 14px;
-      opacity: 0.85;
-      margin-bottom: 6px;
+      font-size: 11.5px;
+      opacity: 0.92;
+      margin-bottom: 4px;
     }
 
     /* ── INFO BOX ── */
@@ -468,1069 +682,1287 @@
       background: var(--bg);
       border: 1px solid var(--border);
       border-left: 3px solid var(--teal);
-      border-radius: 0 10px 10px 0;
-      padding: 20px 24px;
-      margin: 24px 0;
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      margin-bottom: 12px;
     }
 
     .info-box p {
-      font-size: 13px;
+      font-size: 11.5px;
       color: var(--slate);
-      line-height: 1.7;
-    }
-
-    /* ── FOOTER ── */
-    .doc-footer {
-      margin-top: 80px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      color: var(--muted);
+      line-height: 1.55;
     }
 
     /* ── TIMELINE ── */
     .timeline {
-      margin: 32px 0;
+      margin: 12px 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .timeline-item {
       display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 24px;
-      margin-bottom: 20px;
-      align-items: start;
+      grid-template-columns: 110px 1fr;
+      gap: 12px;
+      align-items: center;
     }
 
     .timeline-month {
       background: var(--dark);
       color: white;
-      border-radius: 8px;
-      padding: 12px;
+      border-radius: 6px;
+      padding: 8px 6px;
       text-align: center;
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .timeline-month small {
+      font-size: 9.5px;
+      font-weight: 500;
+      opacity: 0.8;
+      display: block;
     }
 
     .timeline-content {
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px 20px;
+      border-radius: 8px;
+      padding: 8px 12px;
+      background: white;
     }
 
     .timeline-title {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--dark);
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .timeline-desc {
-      font-size: 13px;
+      font-size: 11px;
       color: var(--muted);
+      line-height: 1.35;
     }
 
-    /* ── TECH GRID ── */
-    .tech-grid {
+    /* ── GRID CARDS (INCLUSO / NÃO INCLUSO) ── */
+    .card-grid-2x2 {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin: 24px 0;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
     }
 
-    .tech-item {
+    .feature-card {
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-      text-align: center;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: white;
     }
 
-    .tech-name {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--dark);
+    .feature-card-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       margin-bottom: 4px;
     }
 
-    .tech-role {
-      font-size: 11px;
-      color: var(--muted);
+    .feature-card-icon {
+      font-size: 14px;
     }
 
-    /* ── PRINT ── */
+    .feature-card-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .feature-card-desc {
+      font-size: 10.5px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* ── TERMS GRID ── */
+    .terms-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .terms-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--teal);
+      border-radius: 0 8px 8px 0;
+      padding: 10px 12px;
+    }
+
+    .terms-card-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 3px;
+    }
+
+    .terms-card-text {
+      font-size: 10.5px;
+      color: var(--slate);
+      line-height: 1.45;
+    }
+
+    /* ── SIGNATURES ── */
+    .signatures-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 18px;
+      margin-bottom: 8px;
+    }
+
+    .signature-box {
+      border-top: 1.5px solid var(--dark);
+      padding-top: 8px;
+      text-align: center;
+    }
+
+    .signature-name {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--dark);
+      letter-spacing: 0.03em;
+    }
+
+    .signature-role {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--pink);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 1px;
+    }
+
+    .signature-sub {
+      font-size: 9.5px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* ── FOOTER ── */
+    .doc-footer {
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* ── PRINT RULES (CRITICAL) ── */
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
     @media print {
-      body { background: white; }
-      .cover { page-break-after: always; }
-      .page-break { page-break-before: always; }
+      body {
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .screen-toolbar {
+        display: none !important;
+      }
+
+      .document-container {
+        padding: 0 !important;
+        gap: 0 !important;
+        display: block !important;
+      }
+
+      .page-sheet {
+        width: 210mm !important;
+        height: 297mm !important;
+        min-height: 297mm !important;
+        max-height: 297mm !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        overflow: hidden !important;
+      }
+
+      .page-inner {
+        padding: 14mm 16mm 12mm 16mm !important;
+      }
+
+      .cover-body {
+        padding: 32mm 18mm 18mm !important;
+      }
+
+      .cover-footer {
+        padding: 16px 18mm !important;
+      }
     }
   </style>
 </head>
+
 <body>
 
-<!-- ══════════════════════════════════════ CAPA ══════════════════════════════════════ -->
-<div class="cover">
-  <div class="cover-top-bar"></div>
-
-  <div class="cover-orb-1"></div>
-  <div class="cover-orb-2"></div>
-
-  <div class="cover-body">
-    <div class="cover-badge">
-      🏥 &nbsp; Proposta Comercial
-    </div>
-
-    <h1 class="cover-title">
-      Plano de<br />
-      Desenvolvimento<br />
-      <span>AppCuidaAmor</span>
-    </h1>
-
-    <p class="cover-subtitle">
-      Desenvolvimento completo do aplicativo mobile e portal web<br />
-      da plataforma de Home Care <strong>Cuida e Amor</strong>.
-    </p>
-
-    <div class="cover-meta">
-      <div class="cover-meta-item">
-        <div class="cover-meta-label">Cliente</div>
-        <div class="cover-meta-value">Cuida e Amor Home Care</div>
-      </div>
-      <div class="cover-meta-item">
-        <div class="cover-meta-label">Data da Proposta</div>
-        <div class="cover-meta-value">Agosto de 2026</div>
-      </div>
-      <div class="cover-meta-item">
-        <div class="cover-meta-label">Validade</div>
-        <div class="cover-meta-value">30 dias corridos</div>
-      </div>
-    </div>
+  <!-- ══════════════════════════════════════ FLOATING SCREEN TOOLBAR ══════════════════════════════════════ -->
+  <div class="screen-toolbar">
+    <div class="screen-toolbar-title">Proposta Comercial — <span>AppCuidaAmor</span></div>
+    <button class="print-btn" onclick="window.print()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+        <rect x="6" y="14" width="12" height="8"></rect>
+      </svg>
+      Imprimir / Salvar PDF
+    </button>
   </div>
 
-  <div class="cover-footer">
-    <div class="cover-footer-brand">App<span>CuidaAmor</span></div>
-    <div class="cover-footer-date">Documento Confidencial — Uso exclusivo do cliente</div>
+  <div class="document-container">
+
+    <!-- ══════════════════════════════════════ FOLHA 1: CAPA ══════════════════════════════════════ -->
+    <div class="page-sheet cover-sheet">
+      <div class="cover-top-bar"></div>
+
+      <div class="cover-orb-1"></div>
+      <div class="cover-orb-2"></div>
+
+      <div class="cover-body">
+        <div>
+          <div class="cover-badge">
+            🏥 &nbsp; Proposta Comercial
+          </div>
+
+          <h1 class="cover-title">
+            Plano de<br />
+            Desenvolvimento<br />
+            <span>AppCuidaAmor</span>
+          </h1>
+
+          <p class="cover-subtitle">
+            Desenvolvimento completo do aplicativo mobile e portal web<br />
+            da plataforma de Home Care <strong>Cuida e Amor</strong>.
+          </p>
+        </div>
+
+        <div class="cover-meta">
+          <div class="cover-meta-item">
+            <div class="cover-meta-label">Cliente</div>
+            <div class="cover-meta-value">Cuida e Amor Home Care</div>
+          </div>
+          <div class="cover-meta-item">
+            <div class="cover-meta-label">Desenvolvimento</div>
+            <div class="cover-meta-value">Ramon Cerqueira (Front)<br />Ibra Có (Back)</div>
+          </div>
+          <div class="cover-meta-item">
+            <div class="cover-meta-label">Data &amp; Validade</div>
+            <div class="cover-meta-value">SETEMBRO 2026 · 07 dias</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover-footer">
+        <div class="cover-footer-brand">App<span>CuidaAmor</span></div>
+        <div class="cover-footer-date">Documento Confidencial — Uso exclusivo do cliente</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ FOLHA 2: 1. VISÃO GERAL ══════════════════════════════════════ -->
+    <div class="page-sheet">
+      <div class="page-inner">
+        <div class="page-content">
+
+          <div class="section-header">
+            <div class="section-number">1</div>
+            <div class="section-title">Visão Geral do Projeto</div>
+          </div>
+
+          <div class="summary-box">
+            <p>
+              O <strong>AppCuidaAmor</strong> é uma plataforma digital completa desenvolvida para a empresa
+              <strong>Cuida e Amor Home Care</strong>, conectando as famílias dos pacientes ao serviço de
+              assistência domiciliar de forma intuitiva, segura e profissional.
+            </p>
+            <p>
+              A solução entregue compreende um <strong>aplicativo mobile nativo</strong> (Android e iOS via Capacitor),
+              um <strong>portal web responsivo</strong> e toda a infraestrutura de <strong>backend e banco de
+                dados</strong>
+              integrada ao sistema ERP legado SoftCare, já em operação na empresa.
+            </p>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card accent">
+              <div class="metric-label">Total de Horas</div>
+              <div class="metric-value">358h</div>
+              <div class="metric-sub">Ramon Cerqueira &amp; Ibra Có</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Prazo Estimado</div>
+              <div class="metric-value">~5 meses</div>
+              <div class="metric-sub">Em ritmo de 18–20h/semana</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Investimento Total</div>
+              <div class="metric-value">R$ 42.960</div>
+              <div class="metric-sub">R$ 120,00/hora</div>
+            </div>
+          </div>
+
+          <div class="section-header" style="margin-top: 12px; margin-bottom: 12px;">
+            <div class="section-number" style="background: var(--teal-light); color: var(--teal);">T</div>
+            <div class="section-title">Tecnologias Utilizadas</div>
+          </div>
+
+          <div class="tech-grid">
+            <div class="tech-item">
+              <div class="tech-name">Next.js 16</div>
+              <div class="tech-role">Framework principal</div>
+            </div>
+            <div class="tech-item">
+              <div class="tech-name">React 19</div>
+              <div class="tech-role">Interface de usuário</div>
+            </div>
+            <div class="tech-item">
+              <div class="tech-name">TypeScript</div>
+              <div class="tech-role">Tipagem e qualidade</div>
+            </div>
+            <div class="tech-item">
+              <div class="tech-name">Tailwind CSS v4</div>
+              <div class="tech-role">Estilização</div>
+            </div>
+            <div class="tech-item">
+              <div class="tech-name">Capacitor 8</div>
+              <div class="tech-role">App nativo</div>
+            </div>
+            <div class="tech-item">
+              <div class="tech-name">Prisma ORM</div>
+              <div class="tech-role">Acesso ao banco</div>
+            </div>
+            <div class="tech-item">
+              <div class="tech-name">SQL Server</div>
+              <div class="tech-role">Banco legado ERP</div>
+            </div>
+            <div class="tech-item">
+              <div class="tech-name">JWT / Jose</div>
+              <div class="tech-role">Autenticação segura</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="doc-footer">
+          <span>AppCuidaAmor — Plano de Desenvolvimento</span>
+          <span>Página 2 de 8 · Cuida e Amor Home Care</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ FOLHA 3: 2. ESCOPO DE ENTREGA ══════════════════════════════════════ -->
+    <div class="page-sheet">
+      <div class="page-inner">
+        <div class="page-content">
+
+          <div class="section-header">
+            <div class="section-number">2</div>
+            <div class="section-title">Escopo de Entrega</div>
+          </div>
+
+          <p style="font-size: 12px; color: var(--slate); margin-bottom: 12px; line-height: 1.55;">
+            O projeto foi desenvolvido em <strong>9 fases sequenciais</strong>, cobrindo desde a descoberta
+            e análise do sistema legado até o endurecimento de segurança e documentação completa.
+            Todas as fases abaixo foram <strong>concluídas</strong> e fazem parte desta entrega.
+          </p>
+
+          <table class="phase-table">
+            <thead>
+              <tr>
+                <th style="width: 44%;">Fase / Módulo</th>
+                <th>Descrição</th>
+                <th style="width: 55px;">Horas</th>
+                <th style="width: 95px;">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="phase-tag">Fase 1</span><br />
+                  <span class="phase-name">Discovery e Arquitetura</span>
+                  <div class="phase-desc">Análise SoftCare, mapeamento SQL Server, stack</div>
+                </td>
+                <td style="font-size: 11px; color: var(--muted);">
+                  Levantamento de requisitos, análise do banco legado, modelagem da arquitetura
+                </td>
+                <td>40h</td>
+                <td>R$ 4.800</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="phase-tag">Fase 2</span><br />
+                  <span class="phase-name">Infraestrutura Backend</span>
+                  <div class="phase-desc">APIs, Prisma, JWT, middleware</div>
+                </td>
+                <td style="font-size: 11px; color: var(--muted);">
+                  Next.js App Router, Prisma + SQL Server, JWT com cookie httpOnly, endpoints
+                </td>
+                <td>62h</td>
+                <td>R$ 7.440</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="phase-tag">Fase 3</span><br />
+                  <span class="phase-name">Design System</span>
+                  <div class="phase-desc">Tokens, componentes UI, sistema visual</div>
+                </td>
+                <td style="font-size: 11px; color: var(--muted);">
+                  Tokens de design, componentes reutilizáveis, BottomNav e AppHeader
+                </td>
+                <td>38h</td>
+                <td>R$ 4.560</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="phase-tag">Fase 4</span><br />
+                  <span class="phase-name">Autenticação e Onboarding</span>
+                  <div class="phase-desc">Splash, onboarding, login, recuperação</div>
+                </td>
+                <td style="font-size: 11px; color: var(--muted);">
+                  Splash animado, onboarding (3 etapas), login com CPF, recuperação de senha
+                </td>
+                <td>32h</td>
+                <td>R$ 3.840</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="phase-tag">Fase 5</span><br />
+                  <span class="phase-name">Home e Dashboard</span>
+                  <div class="phase-desc">Tela principal — "Meu familiar agora"</div>
+                </td>
+                <td style="font-size: 11px; color: var(--muted);">
+                  Dashboard completo: paciente, cuidador em plantão, vitalidade, skeleton
+                </td>
+                <td>28h</td>
+                <td>R$ 3.360</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="phase-tag">Fase 6</span><br />
+                  <span class="phase-name">Módulos Principais</span>
+                  <div class="phase-desc">Quadro, Escala, Pedidos, Financeiro, Perfil, Suporte</div>
+                </td>
+                <td style="font-size: 11px; color: var(--muted);">
+                  Ficha de anamnese, escala mensal (calendário/lista), pedidos, financeiro, perfil
+                </td>
+                <td>80h</td>
+                <td>R$ 9.600</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="phase-tag">Fase 7</span><br />
+                  <span class="phase-name">Mobile (Capacitor)</span>
+                  <div class="phase-desc">App nativo Android e iOS</div>
+                </td>
+                <td style="font-size: 11px; color: var(--muted);">
+                  Configuração Capacitor, safe area, integrações nativas, builds Android e iOS
+                </td>
+                <td>30h</td>
+                <td>R$ 3.600</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="phase-tag">Fase 8</span><br />
+                  <span class="phase-name">Segurança e Hardening</span>
+                  <div class="phase-desc">Rate limiting, headers HTTP, acessibilidade</div>
+                </td>
+                <td style="font-size: 11px; color: var(--muted);">
+                  Rate limiting anti-brute force, headers HTTP, validação, acessibilidade WCAG
+                </td>
+                <td>24h</td>
+                <td>R$ 2.880</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="phase-tag">Fase 9</span><br />
+                  <span class="phase-name">QA, Testes e Documentação</span>
+                  <div class="phase-desc">Testes, ajustes, documentação técnica</div>
+                </td>
+                <td style="font-size: 11px; color: var(--muted);">
+                  Testes em dispositivos reais, correções de bugs, documentação técnica completa
+                </td>
+                <td>24h</td>
+                <td>R$ 2.880</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2"><strong>TOTAL GERAL</strong></td>
+                <td><strong>358h</strong></td>
+                <td><strong>R$ 42.960</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="info-box" style="margin-bottom: 0;">
+            <p>
+              <strong>Base de cálculo:</strong> Hora/Dev = <strong>R$ 120,00</strong>.
+              Os valores refletem o tempo real de execução de desenvolvimento especializado por
+              <strong>Ramon Cerqueira</strong> (Frontend &amp; Mobile) e <strong>Ibra Có</strong> (Backend &amp; Banco
+              de Dados),
+              sem margens adicionais de infraestrutura de equipe.
+            </p>
+          </div>
+
+        </div>
+
+        <div class="doc-footer">
+          <span>AppCuidaAmor — Plano de Desenvolvimento</span>
+          <span>Página 3 de 8 · Cuida e Amor Home Care</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ FOLHA 4: 3. DETALHAMENTO (PARTE 1) ══════════════════════════════════════ -->
+    <div class="page-sheet">
+      <div class="page-inner">
+        <div class="page-content">
+
+          <div class="section-header">
+            <div class="section-number">3</div>
+            <div class="section-title">Detalhamento de Horas por Tarefa</div>
+          </div>
+
+          <!-- FASE 1 -->
+          <div class="task-phase">
+            <div class="task-phase-header">
+              <div class="task-phase-dot"></div>
+              <div class="task-phase-name">Fase 1 — Discovery e Arquitetura</div>
+              <div class="task-phase-hours">40h · R$ 4.800</div>
+            </div>
+            <div class="task-list">
+              <div class="task-item">
+                <span class="task-name">Reunião de levantamento de requisitos e regras de negócio</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Análise e mapeamento do banco SQL Server legado (SoftCare)</span>
+                <span class="task-hours">12h</span>
+                <span class="task-cost">R$ 1.440</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Definição de arquitetura (stack, App Router, Prisma, JWT)</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Estudo de relacionamentos: contratante ↔ paciente ↔ cuidador</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Planejamento de sprints e estimativas de entrega</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FASE 2 -->
+          <div class="task-phase">
+            <div class="task-phase-header">
+              <div class="task-phase-dot"></div>
+              <div class="task-phase-name">Fase 2 — Infraestrutura Backend</div>
+              <div class="task-phase-hours">62h · R$ 7.440</div>
+            </div>
+            <div class="task-list">
+              <div class="task-item">
+                <span class="task-name">Setup Next.js 16 + TypeScript + App Router + Tailwind v4</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Configuração Prisma ORM + conexão SQL Server + schema</span>
+                <span class="task-hours">10h</span>
+                <span class="task-cost">R$ 1.200</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Sistema de autenticação JWT (login, cookie httpOnly, middleware)</span>
+                <span class="task-hours">10h</span>
+                <span class="task-cost">R$ 1.200</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">API /api/dashboard (responsável, paciente, cuidador do dia)</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">API /api/escala (plantões mensais, otimização de queries)</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">API /api/quadro (ficha anamnese + medicamentos)</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">APIs /api/pedidos, /api/solicitacoes, /api/boletos, /api/perfil</span>
+                <span class="task-hours">10h</span>
+                <span class="task-cost">R$ 1.200</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">API /api/cuidadores-ativos + logout + proteção de rotas</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FASE 3 -->
+          <div class="task-phase">
+            <div class="task-phase-header">
+              <div class="task-phase-dot"></div>
+              <div class="task-phase-name">Fase 3 — Design System</div>
+              <div class="task-phase-hours">38h · R$ 4.560</div>
+            </div>
+            <div class="task-list">
+              <div class="task-item">
+                <span class="task-name">Tokens de design: cores, tipografia, espaçamento, radius, sombras</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Componentes base: Button (variantes), Input (acessível), Avatar</span>
+                <span class="task-hours">10h</span>
+                <span class="task-cost">R$ 1.200</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Componentes: StatusBadge, Skeleton, EmptyState, ErrorState</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">BottomNav (5 abas), AppHeader (com safe-area mobile)</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">AUDITORIA_FRONTEND.md + DESIGN_SYSTEM.md</span>
+                <span class="task-hours">4h</span>
+                <span class="task-cost">R$ 480</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FASE 4 -->
+          <div class="task-phase">
+            <div class="task-phase-header">
+              <div class="task-phase-dot"></div>
+              <div class="task-phase-name">Fase 4 — Autenticação e Onboarding</div>
+              <div class="task-phase-hours">32h · R$ 3.840</div>
+            </div>
+            <div class="task-list">
+              <div class="task-item">
+                <span class="task-name">Splash Screen animado (partículas, reveal sequencial)</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Onboarding — 3 etapas com swipe, progress indicator e skip</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Tela de Login — CPF formatado, show/hide senha, validação</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Recuperação de senha: /esqueci-senha, /verificacao, /nova-senha</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="doc-footer">
+          <span>AppCuidaAmor — Plano de Desenvolvimento</span>
+          <span>Página 4 de 8 · Cuida e Amor Home Care</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ FOLHA 5: 3. DETALHAMENTO (PARTE 2) ══════════════════════════════════════ -->
+    <div class="page-sheet">
+      <div class="page-inner">
+        <div class="page-content">
+
+          <div class="section-header">
+            <div class="section-number">3</div>
+            <div class="section-title">Detalhamento de Horas (Continuação)</div>
+          </div>
+
+          <!-- FASE 5 -->
+          <div class="task-phase">
+            <div class="task-phase-header">
+              <div class="task-phase-dot"></div>
+              <div class="task-phase-name">Fase 5 — Home e Dashboard</div>
+              <div class="task-phase-hours">28h · R$ 3.360</div>
+            </div>
+            <div class="task-list">
+              <div class="task-item">
+                <span class="task-name">Layout da Home: estrutura, hierarquia visual e scroll mobile</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Componente MeuFamiliarAgora (paciente + cuidador + status)</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Acesso rápido, vitalidade, próximo plantão, atualizações</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Skeleton loading, Empty State e Error State da Home</span>
+                <span class="task-hours">4h</span>
+                <span class="task-cost">R$ 480</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Integração com /api/dashboard + testes de fluxo</span>
+                <span class="task-hours">4h</span>
+                <span class="task-cost">R$ 480</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FASE 6 -->
+          <div class="task-phase">
+            <div class="task-phase-header">
+              <div class="task-phase-dot"></div>
+              <div class="task-phase-name">Fase 6 — Módulos Principais</div>
+              <div class="task-phase-hours">80h · R$ 9.600</div>
+            </div>
+            <div class="task-list">
+              <div class="task-item">
+                <span class="task-name">Quadro de Saúde — ficha anamnese, medicamentos, vitalidade</span>
+                <span class="task-hours">14h</span>
+                <span class="task-cost">R$ 1.680</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Escala — calendário mensal + lista + bottom sheet de detalhes</span>
+                <span class="task-hours">18h</span>
+                <span class="task-cost">R$ 2.160</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Central de Pedidos — lista, criar solicitação, status, timeline</span>
+                <span class="task-hours">12h</span>
+                <span class="task-cost">R$ 1.440</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Financeiro — fatura atual, histórico, copiar código de barras</span>
+                <span class="task-hours">10h</span>
+                <span class="task-cost">R$ 1.200</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Perfil — dados pessoais, paciente vinculado, segurança</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Suporte — FAQ, WhatsApp, telefone, e-mail</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Notificações — lista separada por data e tipos visuais</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Estados: loading, skeleton, empty, error em todos os módulos</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FASE 7 -->
+          <div class="task-phase">
+            <div class="task-phase-header">
+              <div class="task-phase-dot"></div>
+              <div class="task-phase-name">Fase 7 — Mobile com Capacitor</div>
+              <div class="task-phase-hours">30h · R$ 3.600</div>
+            </div>
+            <div class="task-list">
+              <div class="task-item">
+                <span class="task-name">Configuração Capacitor 8 (Android + iOS)</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Safe area: notch, Dynamic Island, barra de navegação</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Plugins nativos: WhatsApp, telefone, e-mail, clipboard</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Status bar, splash nativo, ícone do aplicativo</span>
+                <span class="task-hours">4h</span>
+                <span class="task-cost">R$ 480</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Build Android (.apk / .aab) e setup iOS</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FASE 8 -->
+          <div class="task-phase">
+            <div class="task-phase-header">
+              <div class="task-phase-dot"></div>
+              <div class="task-phase-name">Fase 8 — Segurança e Hardening</div>
+              <div class="task-phase-hours">24h · R$ 2.880</div>
+            </div>
+            <div class="task-list">
+              <div class="task-item">
+                <span class="task-name">Rate limiting anti-brute force (5 tentativas / 15 min)</span>
+                <span class="task-hours">5h</span>
+                <span class="task-cost">R$ 600</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Centralização JWT (auth.ts) + eliminação de vulnerabilidades</span>
+                <span class="task-hours">4h</span>
+                <span class="task-cost">R$ 480</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Headers HTTP de segurança + validação e sanitização POST</span>
+                <span class="task-hours">7h</span>
+                <span class="task-cost">R$ 840</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Otimização queries SQL Server + acessibilidade WCAG</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FASE 9 -->
+          <div class="task-phase">
+            <div class="task-phase-header">
+              <div class="task-phase-dot"></div>
+              <div class="task-phase-name">Fase 9 — QA, Testes e Documentação</div>
+              <div class="task-phase-hours">24h · R$ 2.880</div>
+            </div>
+            <div class="task-list">
+              <div class="task-item">
+                <span class="task-name">Testes manuais em todos os 14 fluxos de tela</span>
+                <span class="task-hours">8h</span>
+                <span class="task-cost">R$ 960</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Testes em dispositivos Android e iOS reais</span>
+                <span class="task-hours">6h</span>
+                <span class="task-cost">R$ 720</span>
+              </div>
+              <div class="task-item">
+                <span class="task-name">Documentação técnica (DOCUMENTACAO_TECNICA.md e atualizacoes.md)</span>
+                <span class="task-hours">10h</span>
+                <span class="task-cost">R$ 1.200</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="doc-footer">
+          <span>AppCuidaAmor — Plano de Desenvolvimento</span>
+          <span>Página 5 de 8 · Cuida e Amor Home Care</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ FOLHA 6: 4. PROPOSTA FINANCEIRA ══════════════════════════════════════ -->
+    <div class="page-sheet">
+      <div class="page-inner">
+        <div class="page-content">
+
+          <div class="section-header">
+            <div class="section-number">4</div>
+            <div class="section-title">Proposta Financeira</div>
+          </div>
+
+          <p style="font-size: 12px; color: var(--slate); margin-bottom: 10px; line-height: 1.55;">
+            O investimento abaixo reflete o custo real de desenvolvimento por profissionais experientes com
+            domínio nas tecnologias utilizadas. O modelo apresentado considera a modalidade de
+            <strong>pagamento por fase concluída</strong>, garantindo controle financeiro e visibilidade para ambas as
+            partes.
+          </p>
+
+          <table class="payment-table">
+            <thead>
+              <tr>
+                <th>Fase</th>
+                <th>Entregável Principal</th>
+                <th style="width: 50px; text-align: center;">Horas</th>
+                <th style="width: 90px;">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Fase 1 — Discovery</td>
+                <td>Documentação de requisitos e arquitetura</td>
+                <td style="text-align: center;">40h</td>
+                <td>R$ 4.800</td>
+              </tr>
+              <tr>
+                <td>Fase 2 — Backend</td>
+                <td>APIs completas e autenticação funcionais</td>
+                <td style="text-align: center;">62h</td>
+                <td>R$ 7.440</td>
+              </tr>
+              <tr>
+                <td>Fase 3 — Design System</td>
+                <td>Componentes e tokens validados</td>
+                <td style="text-align: center;">38h</td>
+                <td>R$ 4.560</td>
+              </tr>
+              <tr>
+                <td>Fase 4 — Autenticação</td>
+                <td>Splash, onboarding e login funcionais</td>
+                <td style="text-align: center;">32h</td>
+                <td>R$ 3.840</td>
+              </tr>
+              <tr>
+                <td>Fase 5 — Home</td>
+                <td>Dashboard principal integrado</td>
+                <td style="text-align: center;">28h</td>
+                <td>R$ 3.360</td>
+              </tr>
+              <tr>
+                <td>Fase 6 — Módulos</td>
+                <td>Todas as telas funcionais e integradas</td>
+                <td style="text-align: center;">80h</td>
+                <td>R$ 9.600</td>
+              </tr>
+              <tr>
+                <td>Fase 7 — Mobile</td>
+                <td>App Android e iOS buildados</td>
+                <td style="text-align: center;">30h</td>
+                <td>R$ 3.600</td>
+              </tr>
+              <tr>
+                <td>Fase 8 — Segurança</td>
+                <td>Auditoria e hardening completo</td>
+                <td style="text-align: center;">24h</td>
+                <td>R$ 2.880</td>
+              </tr>
+              <tr>
+                <td>Fase 9 — QA e Docs</td>
+                <td>Testes, ajustes e documentação</td>
+                <td style="text-align: center;">24h</td>
+                <td>R$ 2.880</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2">INVESTIMENTO TOTAL</td>
+                <td style="text-align: center;">358h</td>
+                <td>R$ 42.960</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="highlight-box">
+            <h3>💡 Proposta de Pagamento Sugerida</h3>
+            <p>Para facilitar o fluxo financeiro de ambas as partes, sugerimos o escalonamento:</p>
+            <ul>
+              <li><strong>30% na assinatura do contrato</strong> — R$ 12.888 (Discovery + início do Backend)</li>
+              <li><strong>35% na entrega do MVP funcional</strong> — R$ 15.036 (Fases 3, 4 e 5 concluídas)</li>
+              <li><strong>35% na entrega final aprovada</strong> — R$ 15.036 (Fases 6, 7, 8 e 9 concluídas)</li>
+            </ul>
+          </div>
+
+          <div class="info-box" style="margin-bottom: 0;">
+            <p>
+              <strong>Valor de referência de mercado:</strong> Segundo pesquisas de mercado (Agosto de 2026),
+              o valor médio de um desenvolvedor pleno no Brasil varia entre <strong>R$ 100 e R$ 180/hora</strong>
+              para projetos de desenvolvimento web/mobile com React, Next.js e TypeScript.
+              O valor proposto de <strong>R$ 120/hora</strong> está dentro da faixa competitiva do mercado nacional.
+            </p>
+          </div>
+
+        </div>
+
+        <div class="doc-footer">
+          <span>AppCuidaAmor — Plano de Desenvolvimento</span>
+          <span>Página 6 de 8 · Cuida e Amor Home Care</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ FOLHA 7: 5. CRONOGRAMA E ESCOPO ══════════════════════════════════════ -->
+    <div class="page-sheet">
+      <div class="page-inner">
+        <div class="page-content">
+
+          <div class="section-header">
+            <div class="section-number">5</div>
+            <div class="section-title">Cronograma e Entregáveis</div>
+          </div>
+
+          <p style="font-size: 12px; color: var(--slate); margin-bottom: 10px; line-height: 1.55;">
+            O cronograma abaixo considera a equipe em regime de <strong>dedicação parcial
+              (18–20 horas semanais por desenvolvedor)</strong>. Em regime integral (40h/semana), o prazo total pode ser
+            reduzido para ~9 semanas.
+          </p>
+
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-month">Mês 1<small>Semanas 1–3</small></div>
+              <div class="timeline-content">
+                <div class="timeline-title">✅ Discovery, Arquitetura e Backend</div>
+                <div class="timeline-desc">Requisitos, análise SQL Server, setup Next.js, Prisma, JWT e APIs principais.
+                </div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-month">Mês 1–2<small>Semanas 3–6</small></div>
+              <div class="timeline-content">
+                <div class="timeline-title">✅ Design System e Autenticação</div>
+                <div class="timeline-desc">Tokens de design, biblioteca UI, splash, onboarding, login e recuperação de
+                  senha.</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-month">Mês 2–3<small>Semanas 5–10</small></div>
+              <div class="timeline-content">
+                <div class="timeline-title">✅ Home e Módulos Principais</div>
+                <div class="timeline-desc">Dashboard, quadro de saúde, escala, pedidos, financeiro, perfil e
+                  notificações.</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-month">Mês 4<small>Semanas 10–14</small></div>
+              <div class="timeline-content">
+                <div class="timeline-title">✅ Mobile (Capacitor) e Segurança</div>
+                <div class="timeline-desc">Build Android/iOS, safe area, plugins nativos, rate limiting, headers HTTP e
+                  WCAG.</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-month">Mês 5<small>Semanas 14–17</small></div>
+              <div class="timeline-content">
+                <div class="timeline-title">✅ QA, Ajustes e Documentação Final</div>
+                <div class="timeline-desc">Testes em aparelhos reais, correções finais, documentação técnica e
+                  auditoria.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin: 12px 0 8px;">
+            <span style="font-size: 13px; font-weight: 800; color: var(--dark);">📦 O que está incluso na entrega</span>
+          </div>
+
+          <div class="card-grid-2x2">
+            <div class="feature-card">
+              <div class="feature-card-header">
+                <span class="feature-card-icon">📱</span>
+                <span class="feature-card-title">Código-fonte completo</span>
+              </div>
+              <div class="feature-card-desc">Frontend Next.js, APIs backend, Prisma e Capacitor. Repositório 100%
+                organizado.</div>
+            </div>
+            <div class="feature-card">
+              <div class="feature-card-header">
+                <span class="feature-card-icon">🔐</span>
+                <span class="feature-card-title">Segurança implementada</span>
+              </div>
+              <div class="feature-card-desc">Rate limiting, JWT seguro, headers HTTP, WCAG e sanitização de dados.</div>
+            </div>
+            <div class="feature-card">
+              <div class="feature-card-header">
+                <span class="feature-card-icon">📋</span>
+                <span class="feature-card-title">Documentação técnica</span>
+              </div>
+              <div class="feature-card-desc">Arquitetura, APIs, banco de dados, deploy e instruções de manutenção.</div>
+            </div>
+            <div class="feature-card">
+              <div class="feature-card-header">
+                <span class="feature-card-icon">📲</span>
+                <span class="feature-card-title">Builds mobile</span>
+              </div>
+              <div class="feature-card-desc">Arquivos de build Android (.apk/.aab) e setup iOS para publicação.</div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin: 6px 0 8px;">
+            <span style="font-size: 13px; font-weight: 800; color: var(--dark);">⚡ O que NÃO está incluso</span>
+          </div>
+
+          <div class="card-grid-2x2" style="margin-bottom: 0;">
+            <div class="feature-card">
+              <div class="feature-card-header">
+                <span class="feature-card-icon">☁️</span>
+                <span class="feature-card-title">Hospedagem</span>
+              </div>
+              <div class="feature-card-desc">Servidor, domínio, certificado SSL e infraestrutura do banco legado.</div>
+            </div>
+            <div class="feature-card">
+              <div class="feature-card-header">
+                <span class="feature-card-icon">✉️</span>
+                <span class="feature-card-title">E-mail transacional</span>
+              </div>
+              <div class="feature-card-desc">Conta em serviço SMTP (SendGrid, AWS SES ou similar) para envio real de
+                e-mails.</div>
+            </div>
+            <div class="feature-card">
+              <div class="feature-card-header">
+                <span class="feature-card-icon">🏪</span>
+                <span class="feature-card-title">Contas nas lojas</span>
+              </div>
+              <div class="feature-card-desc">Taxas de desenvolvedor Google Play (US$ 25 taxa única) e Apple (US$
+                99/ano).</div>
+            </div>
+            <div class="feature-card">
+              <div class="feature-card-header">
+                <span class="feature-card-icon">💳</span>
+                <span class="feature-card-title">Gateway bancário</span>
+              </div>
+              <div class="feature-card-desc">Custos de emissão ou integração de gateway de pagamento/boleto real.</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="doc-footer">
+          <span>AppCuidaAmor — Plano de Desenvolvimento</span>
+          <span>Página 7 de 8 · Cuida e Amor Home Care</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ FOLHA 8: 6. TERMOS E ASSINATURAS ══════════════════════════════════════ -->
+    <div class="page-sheet">
+      <div class="page-inner">
+        <div class="page-content">
+
+          <div class="section-header">
+            <div class="section-number">6</div>
+            <div class="section-title">Termos, Condições e Assinaturas</div>
+          </div>
+
+          <div class="terms-grid">
+            <div class="terms-card">
+              <div class="terms-card-title">Propriedade intelectual</div>
+              <div class="terms-card-text">
+                Todo o código-fonte desenvolvido é propriedade exclusiva do cliente (Cuida e Amor Home Care)
+                após a quitação integral do valor contratado.
+              </div>
+            </div>
+            <div class="terms-card">
+              <div class="terms-card-title">Garantia pós-entrega</div>
+              <div class="terms-card-text">
+                Garantia de 60 dias para correção de bugs funcionais identificados após a entrega final, sem custo
+                adicional.
+                Novas funcionalidades são tratadas separadamente.
+              </div>
+            </div>
+            <div class="terms-card">
+              <div class="terms-card-title">Comunicação e aprovações</div>
+              <div class="terms-card-text">
+                O cliente se compromete a fornecer feedback em até 5 dias úteis. Atrasos superiores a 10 dias úteis
+                podem impactar o cronograma acordado.
+              </div>
+            </div>
+            <div class="terms-card">
+              <div class="terms-card-title">Banco de dados legado</div>
+              <div class="terms-card-text">
+                O sistema integra ao SQL Server do ERP SoftCare. Alterações estruturais no ERP pelo provedor externo
+                podem demandar ajustes adicionais.
+              </div>
+            </div>
+            <div class="terms-card">
+              <div class="terms-card-title">Confidencialidade</div>
+              <div class="terms-card-text">
+                Todas as informações, credenciais, dados de pacientes e estrutura de banco trocados durante o projeto
+                são tratados com total sigilo.
+              </div>
+            </div>
+            <div class="terms-card">
+              <div class="terms-card-title">Validade desta proposta</div>
+              <div class="terms-card-text">
+                Esta proposta tem validade de <strong>30 dias corridos</strong> a partir da emissão. Após este prazo,
+                os valores podem ser revisados.
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; margin-bottom: 24px;">
+            <div style="font-size: 13px; font-weight: 800; color: var(--dark); margin-bottom: 26px;">
+              De acordo das partes:
+            </div>
+
+            <div class="signatures-row">
+              <div>
+                <div class="signature-box">
+                  <div class="signature-name">IBRA CÓ</div>
+                  <div class="signature-role">Desenvolvedor Backend</div>
+                  <div class="signature-sub">Assinatura e data</div>
+                </div>
+              </div>
+              <div>
+                <div class="signature-box">
+                  <div class="signature-name">RAMON CERQUEIRA</div>
+                  <div class="signature-role">Desenvolvedor Frontend</div>
+                  <div class="signature-sub">Assinatura e data</div>
+                </div>
+              </div>
+              <div>
+                <div class="signature-box">
+                  <div class="signature-name">CUIDA E AMOR HOME CARE</div>
+                  <div class="signature-role">Contratante</div>
+                  <div class="signature-sub">Assinatura, carimbo e data</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="doc-footer">
+          <span>AppCuidaAmor — Plano de Desenvolvimento e Proposta Comercial</span>
+          <span>Página 8 de 8 · Documento Confidencial</span>
+        </div>
+      </div>
+    </div>
+
   </div>
-</div>
-
-<!-- ══════════════════════════════════════ 1. VISÃO GERAL ══════════════════════════════════════ -->
-<div class="page page-break">
-
-  <div class="section-header">
-    <div class="section-number">1</div>
-    <div class="section-title">Visão Geral do Projeto</div>
-  </div>
-
-  <div class="summary-box">
-    <p>
-      O <strong>AppCuidaAmor</strong> é uma plataforma digital completa desenvolvida para a empresa
-      <strong>Cuida e Amor Home Care</strong>, conectando as famílias dos pacientes ao serviço de
-      assistência domiciliar de forma intuitiva, segura e profissional.
-    </p>
-    <br />
-    <p>
-      A solução entregue compreende um <strong>aplicativo mobile nativo</strong> (Android e iOS via Capacitor),
-      um <strong>portal web responsivo</strong> e toda a infraestrutura de <strong>backend e banco de dados</strong>
-      integrada ao sistema ERP legado SoftCare, já em operação na empresa.
-    </p>
-  </div>
-
-  <div class="metrics-grid">
-    <div class="metric-card accent">
-      <div class="metric-label">Total de Horas</div>
-      <div class="metric-value">358h</div>
-      <div class="metric-sub">Dev Pleno — 1 profissional</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Prazo Estimado</div>
-      <div class="metric-value">~5 meses</div>
-      <div class="metric-sub">Em ritmo de 18–20h/semana</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Investimento Total</div>
-      <div class="metric-value">R$ 42.960</div>
-      <div class="metric-sub">R$ 120,00/hora</div>
-    </div>
-  </div>
-
-  <div class="section-header" style="margin-top: 40px;">
-    <div class="section-number" style="background: #F0F9FB; color: var(--teal);">T</div>
-    <div class="section-title">Tecnologias Utilizadas</div>
-  </div>
-
-  <div class="tech-grid">
-    <div class="tech-item">
-      <div class="tech-name">Next.js 16</div>
-      <div class="tech-role">Framework principal</div>
-    </div>
-    <div class="tech-item">
-      <div class="tech-name">React 19</div>
-      <div class="tech-role">Interface de usuário</div>
-    </div>
-    <div class="tech-item">
-      <div class="tech-name">TypeScript</div>
-      <div class="tech-role">Tipagem e qualidade</div>
-    </div>
-    <div class="tech-item">
-      <div class="tech-name">Tailwind CSS v4</div>
-      <div class="tech-role">Estilização</div>
-    </div>
-    <div class="tech-item">
-      <div class="tech-name">Capacitor 8</div>
-      <div class="tech-role">App nativo</div>
-    </div>
-    <div class="tech-item">
-      <div class="tech-name">Prisma ORM</div>
-      <div class="tech-role">Acesso ao banco</div>
-    </div>
-    <div class="tech-item">
-      <div class="tech-name">SQL Server</div>
-      <div class="tech-role">Banco legado ERP</div>
-    </div>
-    <div class="tech-item">
-      <div class="tech-name">JWT / Jose</div>
-      <div class="tech-role">Autenticação segura</div>
-    </div>
-  </div>
-
-  <div class="doc-footer">
-    <span>AppCuidaAmor — Plano de Desenvolvimento</span>
-    <span>Cuida e Amor Home Care · Agosto 2026</span>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════ 2. ESCOPO ══════════════════════════════════════ -->
-<div class="page page-break">
-
-  <div class="section-header">
-    <div class="section-number">2</div>
-    <div class="section-title">Escopo de Entrega</div>
-  </div>
-
-  <p style="font-size: 14px; color: var(--slate); margin-bottom: 32px; line-height: 1.75;">
-    O projeto foi desenvolvido em <strong>9 fases sequenciais</strong>, cobrindo desde a descoberta
-    e análise do sistema legado até o endurecimento de segurança e documentação completa.
-    Todas as fases abaixo foram <strong>concluídas</strong> e fazem parte desta entrega.
-  </p>
-
-  <table class="phase-table">
-    <thead>
-      <tr>
-        <th style="width: 45%;">Fase / Módulo</th>
-        <th>Descrição</th>
-        <th style="width: 60px;">Horas</th>
-        <th style="width: 110px;">Valor</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-          <span class="phase-tag">Fase 1</span><br />
-          <span class="phase-name">Discovery e Arquitetura</span>
-          <div class="phase-desc">Análise do ERP SoftCare, mapeamento do banco, definição de stack</div>
-        </td>
-        <td style="font-size: 12px; color: var(--muted);">
-          Levantamento de requisitos, análise do banco SQL Server legado, 
-          modelagem da arquitetura, planejamento de sprints
-        </td>
-        <td>40h</td>
-        <td>R$ 4.800</td>
-      </tr>
-      <tr>
-        <td>
-          <span class="phase-tag">Fase 2</span><br />
-          <span class="phase-name">Infraestrutura Backend</span>
-          <div class="phase-desc">APIs, Prisma, autenticação JWT, middleware</div>
-        </td>
-        <td style="font-size: 12px; color: var(--muted);">
-          Configuração Next.js App Router, integração Prisma + SQL Server,
-          sistema JWT com cookie httpOnly, todos os endpoints de API,
-          middleware de proteção de rotas
-        </td>
-        <td>62h</td>
-        <td>R$ 7.440</td>
-      </tr>
-      <tr>
-        <td>
-          <span class="phase-tag">Fase 3</span><br />
-          <span class="phase-name">Design System</span>
-          <div class="phase-desc">Tokens, componentes UI, sistema visual</div>
-        </td>
-        <td style="font-size: 12px; color: var(--muted);">
-          Definição de tokens (cores, tipografia, espaçamento, radius),
-          biblioteca de componentes (Button, Input, Avatar, StatusBadge,
-          Skeleton, EmptyState), sistema de layout
-        </td>
-        <td>38h</td>
-        <td>R$ 4.560</td>
-      </tr>
-      <tr>
-        <td>
-          <span class="phase-tag">Fase 4</span><br />
-          <span class="phase-name">Autenticação e Onboarding</span>
-          <div class="phase-desc">Splash, onboarding, login, recuperação de senha</div>
-        </td>
-        <td style="font-size: 12px; color: var(--muted);">
-          Splash animado, fluxo de onboarding (3 etapas), tela de login
-          com CPF formatado e show/hide senha, fluxo completo de
-          recuperação de senha (3 telas)
-        </td>
-        <td>32h</td>
-        <td>R$ 3.840</td>
-      </tr>
-      <tr>
-        <td>
-          <span class="phase-tag">Fase 5</span><br />
-          <span class="phase-name">Home e Dashboard</span>
-          <div class="phase-desc">Tela principal — "Meu familiar agora"</div>
-        </td>
-        <td style="font-size: 12px; color: var(--muted);">
-          Dashboard com visão completa: paciente assistido, cuidador em
-          plantão, horário, vitalidade, acesso rápido, próximos eventos,
-          skeleton loading, estados de erro e vazio
-        </td>
-        <td>28h</td>
-        <td>R$ 3.360</td>
-      </tr>
-      <tr>
-        <td>
-          <span class="phase-tag">Fase 6</span><br />
-          <span class="phase-name">Módulos Principais</span>
-          <div class="phase-desc">Quadro, Escala, Pedidos, Financeiro, Perfil, Suporte</div>
-        </td>
-        <td style="font-size: 12px; color: var(--muted);">
-          Quadro de saúde com ficha de anamnese e medicamentos;
-          escala mensal (calendário + lista); central de solicitações;
-          financeiro; perfil; central de ajuda/suporte; notificações
-        </td>
-        <td>80h</td>
-        <td>R$ 9.600</td>
-      </tr>
-      <tr>
-        <td>
-          <span class="phase-tag">Fase 7</span><br />
-          <span class="phase-name">Mobile (Capacitor)</span>
-          <div class="phase-desc">App nativo Android e iOS</div>
-        </td>
-        <td style="font-size: 12px; color: var(--muted);">
-          Configuração Capacitor, safe area (notch/Dynamic Island),
-          integração WhatsApp/telefone/e-mail, clipboard, controle de
-          status bar, splash nativo, builds Android e iOS
-        </td>
-        <td>30h</td>
-        <td>R$ 3.600</td>
-      </tr>
-      <tr>
-        <td>
-          <span class="phase-tag">Fase 8</span><br />
-          <span class="phase-name">Segurança e Hardening</span>
-          <div class="phase-desc">Rate limiting, headers HTTP, acessibilidade</div>
-        </td>
-        <td style="font-size: 12px; color: var(--muted);">
-          Rate limiting anti-brute force, headers de segurança HTTP,
-          centralização JWT, validação de inputs, máscara de CPF,
-          correções WCAG (acessibilidade), eliminação de N+1 queries
-        </td>
-        <td>24h</td>
-        <td>R$ 2.880</td>
-      </tr>
-      <tr>
-        <td>
-          <span class="phase-tag">Fase 9</span><br />
-          <span class="phase-name">QA, Testes e Documentação</span>
-          <div class="phase-desc">Testes, ajustes, documentação técnica</div>
-        </td>
-        <td style="font-size: 12px; color: var(--muted);">
-          Testes manuais em todos os fluxos, correções de bugs,
-          testes em dispositivos Android e iOS, documentação técnica
-          completa, auditoria de segurança e performance, relatório final
-        </td>
-        <td>24h</td>
-        <td>R$ 2.880</td>
-      </tr>
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="2"><strong>TOTAL GERAL</strong></td>
-        <td><strong>358h</strong></td>
-        <td><strong>R$ 42.960</strong></td>
-      </tr>
-    </tfoot>
-  </table>
-
-  <div class="info-box">
-    <p>
-      <strong>Base de cálculo:</strong> Hora/Dev Pleno = <strong>R$ 120,00</strong>.
-      Os valores acima refletem o tempo real de execução de um desenvolvedor pleno
-      (3–5 anos de experiência em Next.js, React, TypeScript e integração com bancos relacionais),
-      sem margens adicionais de gerenciamento ou infraestrutura de equipe.
-    </p>
-  </div>
-
-  <div class="doc-footer">
-    <span>AppCuidaAmor — Plano de Desenvolvimento</span>
-    <span>Cuida e Amor Home Care · Agosto 2026</span>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════ 3. DETALHAMENTO POR FASE ══════════════════════════════════════ -->
-<div class="page page-break">
-
-  <div class="section-header">
-    <div class="section-number">3</div>
-    <div class="section-title">Detalhamento de Horas por Tarefa</div>
-  </div>
-
-  <!-- FASE 1 -->
-  <div class="task-phase">
-    <div class="task-phase-header">
-      <div class="task-phase-dot"></div>
-      <div class="task-phase-name">Fase 1 — Discovery e Arquitetura</div>
-      <div class="task-phase-hours">40h · R$ 4.800</div>
-    </div>
-    <div class="task-list">
-      <div class="task-item">
-        <span class="task-name">Reunião de levantamento de requisitos e regras de negócio</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Análise e mapeamento do banco SQL Server legado (SoftCare)</span>
-        <span class="task-hours">12h</span>
-        <span class="task-cost">R$ 1.440</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Definição de arquitetura (stack, App Router, Prisma, JWT)</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Estudo de relacionamentos: contratante ↔ paciente ↔ cuidador</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Planejamento de sprints e estimativas de entrega</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- FASE 2 -->
-  <div class="task-phase">
-    <div class="task-phase-header">
-      <div class="task-phase-dot"></div>
-      <div class="task-phase-name">Fase 2 — Infraestrutura Backend</div>
-      <div class="task-phase-hours">62h · R$ 7.440</div>
-    </div>
-    <div class="task-list">
-      <div class="task-item">
-        <span class="task-name">Setup Next.js 16 + TypeScript + App Router + Tailwind v4</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Configuração Prisma ORM + conexão SQL Server + geração do schema</span>
-        <span class="task-hours">10h</span>
-        <span class="task-cost">R$ 1.200</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Sistema de autenticação JWT (login, cookie httpOnly, middleware)</span>
-        <span class="task-hours">10h</span>
-        <span class="task-cost">R$ 1.200</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">API /api/dashboard (responsável, paciente, cuidador do dia)</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">API /api/escala (plantões mensais, otimização N+1)</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">API /api/quadro (ficha anamnese + medicamentos)</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">APIs /api/pedidos, /api/solicitacoes, /api/boletos, /api/perfil</span>
-        <span class="task-hours">10h</span>
-        <span class="task-cost">R$ 1.200</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">API /api/cuidadores-ativos + logout + proteção de rotas</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- FASE 3 -->
-  <div class="task-phase">
-    <div class="task-phase-header">
-      <div class="task-phase-dot"></div>
-      <div class="task-phase-name">Fase 3 — Design System</div>
-      <div class="task-phase-hours">38h · R$ 4.560</div>
-    </div>
-    <div class="task-list">
-      <div class="task-item">
-        <span class="task-name">Tokens de design: cores, tipografia, espaçamento, radius, sombras</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Componentes: Button (variantes), Input (acessível), Avatar</span>
-        <span class="task-hours">10h</span>
-        <span class="task-cost">R$ 1.200</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Componentes: StatusBadge, Skeleton, EmptyState, ErrorState</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">BottomNav (5 abas), AppHeader (com safe-area mobile)</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">AUDITORIA_FRONTEND.md + DESIGN_SYSTEM.md</span>
-        <span class="task-hours">4h</span>
-        <span class="task-cost">R$ 480</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- FASE 4 -->
-  <div class="task-phase">
-    <div class="task-phase-header">
-      <div class="task-phase-dot"></div>
-      <div class="task-phase-name">Fase 4 — Autenticação e Onboarding</div>
-      <div class="task-phase-hours">32h · R$ 3.840</div>
-    </div>
-    <div class="task-list">
-      <div class="task-item">
-        <span class="task-name">Splash Screen animado (partículas, reveal sequencial)</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Onboarding — 3 etapas com swipe, progress indicator e skip</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Tela de Login — CPF formatado, show/hide senha, validação, erro</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Recuperação de senha: /esqueci-senha, /verificacao, /nova-senha</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="doc-footer">
-    <span>AppCuidaAmor — Plano de Desenvolvimento</span>
-    <span>Cuida e Amor Home Care · Agosto 2026</span>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════ 3. CONT. ══════════════════════════════════════ -->
-<div class="page page-break">
-
-  <!-- FASE 5 -->
-  <div class="task-phase">
-    <div class="task-phase-header">
-      <div class="task-phase-dot"></div>
-      <div class="task-phase-name">Fase 5 — Home e Dashboard</div>
-      <div class="task-phase-hours">28h · R$ 3.360</div>
-    </div>
-    <div class="task-list">
-      <div class="task-item">
-        <span class="task-name">Layout da Home: estrutura, hierarquia visual e scroll</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Componente MeuFamiliarAgora (paciente + cuidador + status)</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Acesso rápido, vitalidade, próximo plantão, últimas atualizações</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Skeleton loading, Empty State e Error State da Home</span>
-        <span class="task-hours">4h</span>
-        <span class="task-cost">R$ 480</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Integração com /api/dashboard + testes de fluxo</span>
-        <span class="task-hours">4h</span>
-        <span class="task-cost">R$ 480</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- FASE 6 -->
-  <div class="task-phase">
-    <div class="task-phase-header">
-      <div class="task-phase-dot"></div>
-      <div class="task-phase-name">Fase 6 — Módulos Principais</div>
-      <div class="task-phase-hours">80h · R$ 9.600</div>
-    </div>
-    <div class="task-list">
-      <div class="task-item">
-        <span class="task-name">Quadro de Saúde — ficha anamnese, medicamentos, vitalidade</span>
-        <span class="task-hours">14h</span>
-        <span class="task-cost">R$ 1.680</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Escala — calendário mensal + lista + bottom sheet de detalhes</span>
-        <span class="task-hours">18h</span>
-        <span class="task-cost">R$ 2.160</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Central de Pedidos — lista, criar solicitação, status, timeline</span>
-        <span class="task-hours">12h</span>
-        <span class="task-cost">R$ 1.440</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Financeiro — fatura atual, histórico, copiar código de barras</span>
-        <span class="task-hours">10h</span>
-        <span class="task-cost">R$ 1.200</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Perfil — dados pessoais, paciente vinculado, segurança</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Suporte — FAQ, WhatsApp, telefone, e-mail</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Notificações — lista separada por data, tipos visuais distintos</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Estados: loading, skeleton, empty, error, offline em todos os módulos</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- FASE 7 -->
-  <div class="task-phase">
-    <div class="task-phase-header">
-      <div class="task-phase-dot"></div>
-      <div class="task-phase-name">Fase 7 — Mobile com Capacitor</div>
-      <div class="task-phase-hours">30h · R$ 3.600</div>
-    </div>
-    <div class="task-list">
-      <div class="task-item">
-        <span class="task-name">Configuração Capacitor 8 (Android + iOS)</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Safe area: notch, Dynamic Island, barra Android</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Plugins nativos: WhatsApp, telefone, e-mail, clipboard</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Status bar, splash nativo, ícone do app</span>
-        <span class="task-hours">4h</span>
-        <span class="task-cost">R$ 480</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Build Android (.apk / .aab) e configuração iOS</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- FASE 8 -->
-  <div class="task-phase">
-    <div class="task-phase-header">
-      <div class="task-phase-dot"></div>
-      <div class="task-phase-name">Fase 8 — Segurança e Hardening</div>
-      <div class="task-phase-hours">24h · R$ 2.880</div>
-    </div>
-    <div class="task-list">
-      <div class="task-item">
-        <span class="task-name">Rate limiting anti-brute force (5 tentativas / 15 min)</span>
-        <span class="task-hours">5h</span>
-        <span class="task-cost">R$ 600</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Centralização JWT (auth.ts) + eliminação de fallback inseguro</span>
-        <span class="task-hours">4h</span>
-        <span class="task-cost">R$ 480</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Headers HTTP de segurança (X-Frame, nosniff, HSTS, etc.)</span>
-        <span class="task-hours">3h</span>
-        <span class="task-cost">R$ 360</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Validação e sanitização de inputs em APIs POST</span>
-        <span class="task-hours">4h</span>
-        <span class="task-cost">R$ 480</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Eliminação N+1 queries + otimização queries paralelas</span>
-        <span class="task-hours">4h</span>
-        <span class="task-cost">R$ 480</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Acessibilidade WCAG: label/htmlFor, aria-invalid, zoom habilitado</span>
-        <span class="task-hours">4h</span>
-        <span class="task-cost">R$ 480</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- FASE 9 -->
-  <div class="task-phase">
-    <div class="task-phase-header">
-      <div class="task-phase-dot"></div>
-      <div class="task-phase-name">Fase 9 — QA, Testes e Documentação</div>
-      <div class="task-phase-hours">24h · R$ 2.880</div>
-    </div>
-    <div class="task-list">
-      <div class="task-item">
-        <span class="task-name">Testes manuais em todos os 14 fluxos de tela</span>
-        <span class="task-hours">8h</span>
-        <span class="task-cost">R$ 960</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Testes em dispositivos Android e iOS reais</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Documentação técnica completa (DOCUMENTACAO_TECNICA.md)</span>
-        <span class="task-hours">6h</span>
-        <span class="task-cost">R$ 720</span>
-      </div>
-      <div class="task-item">
-        <span class="task-name">Relatório de auditoria e hardening (atualizacoes.md)</span>
-        <span class="task-hours">4h</span>
-        <span class="task-cost">R$ 480</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="doc-footer">
-    <span>AppCuidaAmor — Plano de Desenvolvimento</span>
-    <span>Cuida e Amor Home Care · Agosto 2026</span>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════ 4. FINANCEIRO ══════════════════════════════════════ -->
-<div class="page page-break">
-
-  <div class="section-header">
-    <div class="section-number">4</div>
-    <div class="section-title">Proposta Financeira</div>
-  </div>
-
-  <p style="font-size: 14px; color: var(--slate); margin-bottom: 32px; line-height: 1.75;">
-    O investimento abaixo reflete o custo real de desenvolvimento por um profissional pleno com
-    domínio nas tecnologias utilizadas. O modelo apresentado considera a modalidade de
-    <strong>pagamento por fase concluída</strong>, garantindo controle financeiro e visibilidade para ambas as partes.
-  </p>
-
-  <table class="payment-table">
-    <thead>
-      <tr>
-        <th>Fase</th>
-        <th>Entregável</th>
-        <th>Horas</th>
-        <th>Valor</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Fase 1 — Discovery</td>
-        <td>Documentação de requisitos e arquitetura</td>
-        <td>40h</td>
-        <td>R$ 4.800</td>
-      </tr>
-      <tr>
-        <td>Fase 2 — Backend</td>
-        <td>APIs completas e autenticação funcionais</td>
-        <td>62h</td>
-        <td>R$ 7.440</td>
-      </tr>
-      <tr>
-        <td>Fase 3 — Design System</td>
-        <td>Componentes e tokens validados</td>
-        <td>38h</td>
-        <td>R$ 4.560</td>
-      </tr>
-      <tr>
-        <td>Fase 4 — Autenticação</td>
-        <td>Splash, onboarding e login funcionais</td>
-        <td>32h</td>
-        <td>R$ 3.840</td>
-      </tr>
-      <tr>
-        <td>Fase 5 — Home</td>
-        <td>Dashboard principal integrado</td>
-        <td>28h</td>
-        <td>R$ 3.360</td>
-      </tr>
-      <tr>
-        <td>Fase 6 — Módulos</td>
-        <td>Todas as telas funcionais e integradas</td>
-        <td>80h</td>
-        <td>R$ 9.600</td>
-      </tr>
-      <tr>
-        <td>Fase 7 — Mobile</td>
-        <td>App Android e iOS buildados</td>
-        <td>30h</td>
-        <td>R$ 3.600</td>
-      </tr>
-      <tr>
-        <td>Fase 8 — Segurança</td>
-        <td>Auditoria e hardening completo</td>
-        <td>24h</td>
-        <td>R$ 2.880</td>
-      </tr>
-      <tr>
-        <td>Fase 9 — QA e Docs</td>
-        <td>Testes, ajustes e documentação</td>
-        <td>24h</td>
-        <td>R$ 2.880</td>
-      </tr>
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="2">INVESTIMENTO TOTAL</td>
-        <td>358h</td>
-        <td>R$ 42.960</td>
-      </tr>
-    </tfoot>
-  </table>
-
-  <div class="highlight-box">
-    <h3>💡 Proposta de Pagamento Sugerida</h3>
-    <p>Para facilitar o fluxo financeiro de ambas as partes, sugerimos o seguinte escalonamento:</p>
-    <ul>
-      <li><strong>30% na assinatura do contrato</strong> — R$ 12.888 (Discovery + início do Backend)</li>
-      <li><strong>35% na entrega do MVP funcional</strong> — R$ 15.036 (Fases 3, 4 e 5 concluídas)</li>
-      <li><strong>35% na entrega final aprovada</strong> — R$ 15.036 (Fases 6, 7, 8 e 9 concluídas)</li>
-    </ul>
-  </div>
-
-  <div class="info-box">
-    <p>
-      <strong>Valor de referência de mercado:</strong> Segundo pesquisas de mercado de Agosto de 2026,
-      o valor médio de um desenvolvedor pleno no Brasil varia entre <strong>R$ 100 e R$ 180/hora</strong>
-      para projetos de desenvolvimento web/mobile com React, Next.js e TypeScript.
-      O valor proposto de <strong>R$ 120/hora</strong> está dentro da faixa competitiva do mercado
-      nacional para este perfil e complexidade de projeto.
-    </p>
-  </div>
-
-  <div class="section-header" style="margin-top: 48px;">
-    <div class="section-number" style="background: #F0F9FB; color: var(--teal);">⚡</div>
-    <div class="section-title">O que NÃO está incluso nesta proposta</div>
-  </div>
-
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px;">
-    <div class="info-box" style="margin: 0;">
-      <p><strong>Infraestrutura de hospedagem</strong><br />
-      Servidor, domínio, certificado SSL, CDN. Recomendamos Vercel (frontend) + servidor dedicado (banco SQL Server existente).</p>
-    </div>
-    <div class="info-box" style="margin: 0;">
-      <p><strong>Serviço de e-mail transacional</strong><br />
-      Necessário para habilitar a recuperação de senha real (SendGrid, AWS SES ou similar).</p>
-    </div>
-    <div class="info-box" style="margin: 0;">
-      <p><strong>Publicação nas lojas</strong><br />
-      Google Play Developer Account (R$ 125 taxa única) e Apple Developer Program (US$ 99/ano).</p>
-    </div>
-    <div class="info-box" style="margin: 0;">
-      <p><strong>Integração de boleto real</strong><br />
-      API da Caixa Econômica Federal ou gateway de pagamento para exibição de faturas reais ao usuário.</p>
-    </div>
-  </div>
-
-  <div class="doc-footer">
-    <span>AppCuidaAmor — Plano de Desenvolvimento</span>
-    <span>Cuida e Amor Home Care · Agosto 2026</span>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════ 5. CRONOGRAMA ══════════════════════════════════════ -->
-<div class="page page-break">
-
-  <div class="section-header">
-    <div class="section-number">5</div>
-    <div class="section-title">Cronograma de Entrega</div>
-  </div>
-
-  <p style="font-size: 14px; color: var(--slate); margin-bottom: 32px; line-height: 1.75;">
-    O cronograma abaixo considera um desenvolvedor pleno em regime de <strong>dedicação parcial
-    (18–20 horas semanais)</strong>. Em regime de dedicação integral (40h/semana), o prazo total
-    pode ser reduzido para aproximadamente <strong>9 semanas</strong>.
-  </p>
-
-  <div class="timeline">
-    <div class="timeline-item">
-      <div class="timeline-month">Mês 1<br /><small>Semanas 1–3</small></div>
-      <div class="timeline-content">
-        <div class="timeline-title">✅ Discovery, Arquitetura e Backend</div>
-        <div class="timeline-desc">Levantamento de requisitos, análise do banco, configuração do projeto, Prisma + SQL Server, sistema de autenticação JWT, endpoints de API.</div>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-month">Mês 1–2<br /><small>Semanas 3–6</small></div>
-      <div class="timeline-content">
-        <div class="timeline-title">✅ Design System e Autenticação</div>
-        <div class="timeline-desc">Tokens de design, biblioteca de componentes UI, splash, onboarding, login e recuperação de senha.</div>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-month">Mês 2–3<br /><small>Semanas 5–10</small></div>
-      <div class="timeline-content">
-        <div class="timeline-title">✅ Home e Módulos Principais</div>
-        <div class="timeline-desc">Dashboard completo, quadro de saúde, escala de cuidadores, central de pedidos, financeiro, perfil, suporte e notificações.</div>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-month">Mês 4<br /><small>Semanas 10–14</small></div>
-      <div class="timeline-content">
-        <div class="timeline-title">✅ Mobile (Capacitor) e Segurança</div>
-        <div class="timeline-desc">Build Android e iOS, safe area, plugins nativos, rate limiting, headers de segurança, acessibilidade WCAG.</div>
-      </div>
-    </div>
-    <div class="timeline-item">
-      <div class="timeline-month">Mês 5<br /><small>Semanas 14–17</small></div>
-      <div class="timeline-content">
-        <div class="timeline-title">✅ QA, Ajustes e Documentação Final</div>
-        <div class="timeline-desc">Testes manuais completos, dispositivos físicos Android e iOS, correções finais, documentação técnica, auditoria de segurança, entrega.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="section-header" style="margin-top: 48px;">
-    <div class="section-number" style="background: #F0F9FB; color: var(--teal);">📦</div>
-    <div class="section-title">O que está incluso na entrega</div>
-  </div>
-
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-    <div style="border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
-      <div style="font-size: 20px; margin-bottom: 8px;">📱</div>
-      <div style="font-weight: 700; color: var(--dark); margin-bottom: 6px;">Código-fonte completo</div>
-      <div style="font-size: 13px; color: var(--muted);">Frontend Next.js, backend API, configuração Prisma e Capacitor. Repositório organizado e comentado.</div>
-    </div>
-    <div style="border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
-      <div style="font-size: 20px; margin-bottom: 8px;">🔐</div>
-      <div style="font-weight: 700; color: var(--dark); margin-bottom: 6px;">Segurança implementada</div>
-      <div style="font-size: 13px; color: var(--muted);">Rate limiting, JWT seguro, headers HTTP, WCAG, validação de inputs. Auditoria completa documentada.</div>
-    </div>
-    <div style="border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
-      <div style="font-size: 20px; margin-bottom: 8px;">📋</div>
-      <div style="font-weight: 700; color: var(--dark); margin-bottom: 6px;">Documentação técnica</div>
-      <div style="font-size: 13px; color: var(--muted);">Arquitetura, APIs, banco de dados, configuração, deploy e limitações conhecidas.</div>
-    </div>
-    <div style="border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
-      <div style="font-size: 20px; margin-bottom: 8px;">📲</div>
-      <div style="font-weight: 700; color: var(--dark); margin-bottom: 6px;">Builds mobile</div>
-      <div style="font-size: 13px; color: var(--muted);">Arquivos de build Android (.apk/.aab) e configuração iOS prontos para publicação nas lojas.</div>
-    </div>
-  </div>
-
-  <div class="doc-footer">
-    <span>AppCuidaAmor — Plano de Desenvolvimento</span>
-    <span>Cuida e Amor Home Care · Agosto 2026</span>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════ 6. TERMOS ══════════════════════════════════════ -->
-<div class="page page-break">
-
-  <div class="section-header">
-    <div class="section-number">6</div>
-    <div class="section-title">Termos e Condições Gerais</div>
-  </div>
-
-  <div style="display: grid; gap: 20px;">
-    <div class="info-box">
-      <p><strong>Propriedade intelectual</strong><br />
-      Todo o código-fonte desenvolvido no escopo deste projeto é propriedade exclusiva do cliente
-      (Cuida e Amor Home Care) após a quitação integral do valor contratado.</p>
-    </div>
-    <div class="info-box">
-      <p><strong>Garantia pós-entrega</strong><br />
-      Garantia de 60 dias para correção de bugs funcionais identificados após a entrega final,
-      sem custo adicional. Novas funcionalidades são tratadas como novos contratos.</p>
-    </div>
-    <div class="info-box">
-      <p><strong>Comunicação e aprovações</strong><br />
-      O cliente se compromete a fornecer feedback sobre cada fase em até 5 dias úteis.
-      Atrasos superiores a 10 dias úteis podem impactar o cronograma de entrega.</p>
-    </div>
-    <div class="info-box">
-      <p><strong>Banco de dados legado</strong><br />
-      O sistema integra diretamente ao banco SQL Server do ERP SoftCare. Qualquer alteração
-      na estrutura do banco pelo time do ERP pode requerer ajustes no app, a serem tratados separadamente.</p>
-    </div>
-    <div class="info-box">
-      <p><strong>Confidencialidade</strong><br />
-      Todas as informações, credenciais, dados de clientes e estrutura do banco de dados trocados
-      durante o desenvolvimento são tratados com total confidencialidade.</p>
-    </div>
-    <div class="info-box">
-      <p><strong>Validade desta proposta</strong><br />
-      Esta proposta tem validade de <strong>30 dias corridos</strong> a partir da data de emissão.
-      Após este prazo, os valores podem ser revisados conforme variações do mercado.</p>
-    </div>
-  </div>
-
-  <div style="margin-top: 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
-    <div>
-      <div style="border-top: 1px solid var(--dark); padding-top: 12px; margin-top: 60px;">
-        <div style="font-size: 13px; font-weight: 700; color: var(--dark);">DESENVOLVEDOR</div>
-        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Assinatura e data</div>
-      </div>
-    </div>
-    <div>
-      <div style="border-top: 1px solid var(--dark); padding-top: 12px; margin-top: 60px;">
-        <div style="font-size: 13px; font-weight: 700; color: var(--dark);">CUIDA E AMOR HOME CARE</div>
-        <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Assinatura, carimbo e data</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="doc-footer" style="margin-top: 60px;">
-    <span>AppCuidaAmor — Plano de Desenvolvimento e Proposta Comercial</span>
-    <span>Cuida e Amor Home Care · Agosto de 2026 · Documento Confidencial</span>
-  </div>
-</div>
 
 </body>
+
 </html>
