@@ -162,21 +162,53 @@ export async function POST(request: NextRequest) {
 
     const parsedDate = parseDateInput(String(senha).trim())
 
-    // Gera múltiplos fragmentos de busca para cobrir CPFs com 9, 10 ou 11 dígitos no banco
+    // Gera múltiplos fragmentos de busca para cobrir CPFs em qualquer formato gravado no banco
+    // (ex: "041.991.605-90", "41.991.605-90", "041991605-90", "04199160590", "4199160590")
     const searchTokens: string[] = []
     if (cleanCpfNoZeros.length >= 5) searchTokens.push(cleanCpfNoZeros)
     if (cleanCpfWithZeros.length === 11) searchTokens.push(cleanCpfWithZeros)
+
+    if (rawDigits.length === 11) {
+      const p1 = rawDigits.slice(0, 3)
+      const p2 = rawDigits.slice(3, 6)
+      const p3 = rawDigits.slice(6, 9)
+      const p4 = rawDigits.slice(9, 11)
+
+      searchTokens.push(`${p1}.${p2}.${p3}-${p4}`)
+      searchTokens.push(`${p1}.${p2}.${p3}`)
+      searchTokens.push(`${p2}.${p3}-${p4}`)
+      searchTokens.push(`${p1}.${p2}`)
+      searchTokens.push(`${p2}.${p3}`)
+      searchTokens.push(`${p3}-${p4}`)
+      searchTokens.push(`${rawDigits.slice(0, 9)}-${p4}`)
+      if (p2.length === 3) searchTokens.push(p2)
+      if (p3.length === 3) searchTokens.push(p3)
+    } else if (cleanCpfNoZeros.length >= 8) {
+      const p1 = cleanCpfNoZeros.slice(0, 2)
+      const p2 = cleanCpfNoZeros.slice(2, 5)
+      const p3 = cleanCpfNoZeros.slice(5, 8)
+      const p4 = cleanCpfNoZeros.slice(8)
+
+      searchTokens.push(`${p1}.${p2}.${p3}-${p4}`)
+      searchTokens.push(`${p2}.${p3}-${p4}`)
+      searchTokens.push(`${p2}.${p3}`)
+      searchTokens.push(`${p3}-${p4}`)
+    }
+
     if (rawDigits.length >= 6) {
       searchTokens.push(rawDigits.slice(0, 6))
       searchTokens.push(rawDigits.slice(-6))
     }
 
-    const orClauses: any[] = searchTokens.map((token) => ({
+    // Deduplica tokens válidos
+    const uniqueTokens = Array.from(new Set(searchTokens.filter((t) => t && t.length >= 3)))
+
+    const orClauses: any[] = uniqueTokens.map((token) => ({
       CPF: { contains: token },
     }))
 
-    // Se temos uma data de nascimento, inclui também busca direta pela data
-    if (parsedDate) {
+    // Se temos uma data de nascimento válida, inclui também busca direta pela data
+    if (parsedDate && parsedDate.day && parsedDate.month) {
       orClauses.push({
         AND: [
           { Dia_Nasc: parsedDate.day },
@@ -200,27 +232,30 @@ export async function POST(request: NextRequest) {
         Mes_Nasc: true,
         Ano_Nasc: true,
       },
-      take: 50,
+      take: 60,
     })
 
-    console.log(`[LOGIN ATTEMPT] CPF: ${cpf}, Senha/Data: ${senha}, Candidatos encontrados: ${candidatos.length}`)
+    console.log(`[LOGIN ATTEMPT] CPF: ${cpf}, Senha/Data: ${senha}, Tokens: ${uniqueTokens.length}, Candidatos: ${candidatos.length}`)
 
     let clienteEncontrado: (typeof candidatos)[0] | null = null
     let credencialValida = false
 
     for (const c of candidatos) {
-      const dbDigits = (c.CPF || '').replace(/\D/g, '')
+      const dbRaw = c.CPF || ''
+      const dbDigits = dbRaw.replace(/\D/g, '')
       const dbNoZeros = dbDigits.replace(/^0+/, '')
 
-      // Verifica se o CPF bate
+      // Verifica se o CPF bate de qualquer forma
       const cpfBate =
         dbDigits === rawDigits ||
         dbDigits === cleanCpfWithZeros ||
         dbNoZeros === cleanCpfNoZeros ||
+        (cleanCpfNoZeros.length >= 8 && dbNoZeros.includes(cleanCpfNoZeros)) ||
+        (dbNoZeros.length >= 8 && cleanCpfNoZeros.includes(dbNoZeros)) ||
         (rawDigits.length >= 6 && dbDigits.includes(rawDigits.slice(0, 6))) ||
         (cleanCpfNoZeros.length >= 6 && dbNoZeros.includes(cleanCpfNoZeros.slice(0, 6)))
 
-      // 1. Testa validação por data de nascimento no próprio candidato
+      // 1. Validação por data de nascimento no próprio candidato
       if (parsedDate && matchesBirthDate(c.Dia_Nasc, c.Mes_Nasc, c.Ano_Nasc, parsedDate)) {
         if (cpfBate || candidatos.length <= 5) {
           clienteEncontrado = c
@@ -258,35 +293,54 @@ export async function POST(request: NextRequest) {
         if (credencialValida) break
       }
 
-      // 3. Validação por senha tradicional no ERP
-      if (cpfBate && c.CodUsu) {
-        const dbSenha = await prisma.senha.findUnique({
-          where: { CodUsu: c.CodUsu },
-          select: { Senha: true },
-        })
+      // 3. Validação por senha tradicional no ERP (tabela Senha)
+      if (cpfBate) {
+        const senhasParaTestar: number[] = []
+        if (c.CodUsu) senhasParaTestar.push(c.CodUsu)
 
-        if (dbSenha?.Senha) {
-          const senhaBanco = dbSenha.Senha.trim()
-          const senhaEnviada = String(senha).trim()
-          const cleanBanco = senhaBanco.replace(/\D/g, '')
-          const cleanEnviada = senhaEnviada.replace(/\D/g, '')
-
-          if (
-            senhaBanco === senhaEnviada ||
-            (cleanBanco.length >= 4 && cleanEnviada.length >= 4 && cleanBanco === cleanEnviada) ||
-            (senhaBanco.length === 4 && senhaEnviada.startsWith(senhaBanco)) ||
-            (cleanBanco.length === 4 && cleanEnviada.startsWith(cleanBanco))
-          ) {
-            clienteEncontrado = c
-            credencialValida = true
-            break
+        if (c.CodCli1) {
+          const pai = await prisma.cLIENTEs.findUnique({
+            where: { CodCli: c.CodCli1 },
+            select: { CodUsu: true },
+          })
+          if (pai?.CodUsu && !senhasParaTestar.includes(pai.CodUsu)) {
+            senhasParaTestar.push(pai.CodUsu)
           }
         }
+
+        for (const codUsu of senhasParaTestar) {
+          const dbSenha = await prisma.senha.findUnique({
+            where: { CodUsu: codUsu },
+            select: { Senha: true },
+          })
+
+          if (dbSenha?.Senha) {
+            const senhaBanco = dbSenha.Senha.trim()
+            const senhaEnviada = String(senha).trim()
+            const cleanBanco = senhaBanco.replace(/\D/g, '')
+            const cleanEnviada = senhaEnviada.replace(/\D/g, '')
+
+            if (
+              senhaBanco === senhaEnviada ||
+              (cleanBanco.length >= 3 && cleanEnviada.length >= 3 && cleanBanco === cleanEnviada) ||
+              (senhaBanco.length >= 4 && senhaEnviada.startsWith(senhaBanco)) ||
+              (cleanBanco.length >= 4 && cleanEnviada.startsWith(cleanBanco)) ||
+              (senhaBanco.length >= 4 && senhaBanco.startsWith(senhaEnviada)) ||
+              (cleanBanco.length >= 4 && cleanBanco.startsWith(cleanEnviada))
+            ) {
+              clienteEncontrado = c
+              credencialValida = true
+              break
+            }
+          }
+        }
+
+        if (credencialValida) break
       }
     }
 
-    // Se nenhum candidato direto bateu, mas temos parsedDate, tenta encontrar pelo paciente (ex: Onofre)
-    if (!clienteEncontrado && parsedDate) {
+    // 4. Se nenhum candidato direto bateu, mas temos parsedDate, tenta encontrar pelo paciente
+    if (!clienteEncontrado && parsedDate && parsedDate.day && parsedDate.month) {
       const pacientePorData = await prisma.cLIENTEs.findFirst({
         where: {
           Dia_Nasc: parsedDate.day,

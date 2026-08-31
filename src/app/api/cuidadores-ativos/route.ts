@@ -23,41 +23,63 @@ export async function GET(request: NextRequest) {
       select: { CodCli: true },
     })
 
-    if (pacientesVinculados.length === 0) {
-      return NextResponse.json({ sucesso: true, cuidadores: [] })
-    }
-
-    const pacientePrincipal = pacientesVinculados[0]
+    const targetCodClis =
+      pacientesVinculados.length > 0
+        ? pacientesVinculados.map((p) => p.CodCli)
+        : [responsavelId]
 
     const servicosDoPaciente = await prisma.servico.findMany({
-      where: { Codcli: pacientePrincipal.CodCli },
+      where: { Codcli: { in: targetCodClis } },
       select: { Pedido: true },
     })
 
-    const pedidos = servicosDoPaciente.map((s) => s.Pedido)
+    const pedidos = servicosDoPaciente
+      .map((s) => s.Pedido)
+      .filter((p): p is number => typeof p === 'number')
 
     if (pedidos.length === 0) {
       return NextResponse.json({ sucesso: true, cuidadores: [] })
     }
 
-    const hoje = new Date()
-    hoje.setHours(0, 0, 0, 0)
+    // Busca plantões nos últimos 30 dias até os próximos 90 dias
+    const dataLimiteInicio = new Date()
+    dataLimiteInicio.setDate(dataLimiteInicio.getDate() - 30)
+    dataLimiteInicio.setHours(0, 0, 0, 0)
 
-    // Busca escalas futuras com CodInd definido
-    const escalasFuturas = await prisma.servico1.findMany({
+    const dataLimiteFim = new Date()
+    dataLimiteFim.setDate(dataLimiteFim.getDate() + 90)
+    dataLimiteFim.setHours(23, 59, 59, 999)
+
+    let escalas = await prisma.servico1.findMany({
       where: {
         Pedido: { in: pedidos },
-        Data: { gte: hoje },
         CodInd: { not: null },
+        Data: { gte: dataLimiteInicio, lte: dataLimiteFim },
       },
       select: { CodInd: true, Data: true },
       orderBy: { Data: 'asc' },
-      take: 200, // Limita para não sobrecarregar
     })
 
-    const codigosCuidadores = Array.from(
-      new Set(escalasFuturas.map((e) => e.CodInd).filter((id): id is number => id !== null))
+    let codigosCuidadores = Array.from(
+      new Set(escalas.map((e) => e.CodInd).filter((id): id is number => typeof id === 'number'))
     )
+
+    // Fallback: se não houver plantões na janela de 120 dias, busca qualquer plantão dos pedidos
+    if (codigosCuidadores.length === 0) {
+      const qualquerEscala = await prisma.servico1.findMany({
+        where: {
+          Pedido: { in: pedidos },
+          CodInd: { not: null },
+        },
+        select: { CodInd: true, Data: true },
+        take: 100,
+      })
+
+      escalas = qualquerEscala
+      codigosCuidadores = Array.from(
+        new Set(qualquerEscala.map((e) => e.CodInd).filter((id): id is number => typeof id === 'number'))
+      )
+    }
 
     if (codigosCuidadores.length === 0) {
       return NextResponse.json({ sucesso: true, cuidadores: [] })
@@ -65,11 +87,11 @@ export async function GET(request: NextRequest) {
 
     const cuidadoresAtivos = await prisma.cLIENTEs.findMany({
       where: { CodCli: { in: codigosCuidadores } },
-      select: { CodCli: true, Cliente: true },
+      select: { CodCli: true, Cliente: true, Caminho: true },
     })
 
     const resultado = cuidadoresAtivos.map((c) => {
-      const datasBrutas = escalasFuturas
+      const datasBrutas = escalas
         .filter((e) => e.CodInd === c.CodCli && e.Data)
         .map((e) => (e.Data as Date).toISOString())
 
@@ -77,7 +99,8 @@ export async function GET(request: NextRequest) {
 
       return {
         id: c.CodCli,
-        nome: c.Cliente,
+        nome: c.Cliente || 'Cuidador(a)',
+        avatarSrc: c.Caminho || null,
         plantoes: datasUnicas,
       }
     })
