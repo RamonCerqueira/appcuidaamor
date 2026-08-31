@@ -1,9 +1,7 @@
-/**
- * GET /api/dashboard
- */
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolverFamilia } from '@/lib/paciente'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,26 +10,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ sucesso: false, mensagem: 'Não autorizado.' }, { status: 401 })
     }
 
-    const responsavelId = auth.id
-
-    // Busca responsável e pacientes em paralelo
-    const [responsavel, pacientesVinculados] = await Promise.all([
-      prisma.cLIENTEs.findUnique({
-        where: { CodCli: responsavelId },
-        select: { CodCli: true, CodCli1: true, Cliente: true, Razao: true, Situacao: true, Caminho: true },
-      }),
-      prisma.cLIENTEs.findMany({
-        where: { CodCli1: responsavelId },
-        select: { CodCli: true, Cliente: true, Razao: true, Caminho: true },
-      }),
-    ])
-
-    if (!responsavel) {
+    const familia = await resolverFamilia(auth.id)
+    if (!familia) {
       return NextResponse.json({ sucesso: false, mensagem: 'Perfil não encontrado.' }, { status: 404 })
     }
 
-    const pacientePrincipal = pacientesVinculados.length > 0 ? pacientesVinculados[0] : responsavel
-    const listaPacientes = pacientesVinculados.length > 0 ? pacientesVinculados : [responsavel]
+    const { responsavel, paciente, pacientes, codClisPacientes, codClisResponsaveis } = familia
 
     const hoje = new Date()
     const inicioDoDia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
@@ -40,17 +24,17 @@ export async function GET(request: NextRequest) {
     // Busca serviços, boletos pendentes e ficha mais recente do paciente em paralelo
     const [servicosDoPaciente, boletosPendentes, fichaRecente] = await Promise.all([
       prisma.servico.findMany({
-        where: { Codcli: pacientePrincipal.CodCli },
+        where: { Codcli: { in: codClisPacientes } },
         select: { Pedido: true, HoraInicio: true, HoraSaida: true },
       }),
       prisma.receber.count({
         where: {
-          CodCli: responsavelId,
+          CodCli: { in: codClisResponsaveis },
           OR: [{ Status: null }, { Status: { in: ['A', 'E'] } }],
         },
       }),
       prisma.fichaAnamnese.findFirst({
-        where: { CodCli: pacientePrincipal.CodCli },
+        where: { CodCli: { in: codClisPacientes } },
         orderBy: { DataCriacao: 'desc' },
         select: { ScoreSaude: true, DataCriacao: true },
       }),
@@ -113,8 +97,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       sucesso: true,
       responsavel,
-      paciente: pacientePrincipal,
-      pacientes: listaPacientes,
+      paciente,
+      pacientes,
       cuidadorHoje,
       notificacoes: { boletosPendentes },
       scoreVitalidade,

@@ -1,13 +1,7 @@
-/**
- * GET /api/cuidadores-ativos
- *
- * CORREÇÕES APLICADAS:
- * - P3.1: Usa verifyToken() centralizado
- * - P3.3: Select explícito
- */
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolverFamilia } from '@/lib/paciente'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,20 +10,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ sucesso: false, mensagem: 'Não autorizado.' }, { status: 401 })
     }
 
-    const responsavelId = auth.id
+    const familia = await resolverFamilia(auth.id)
+    if (!familia) {
+      return NextResponse.json({ sucesso: true, cuidadores: [] })
+    }
 
-    const pacientesVinculados = await prisma.cLIENTEs.findMany({
-      where: { CodCli1: responsavelId },
-      select: { CodCli: true },
-    })
-
-    const targetCodClis =
-      pacientesVinculados.length > 0
-        ? pacientesVinculados.map((p) => p.CodCli)
-        : [responsavelId]
+    const { codClisPacientes, todosCodClis } = familia
 
     const servicosDoPaciente = await prisma.servico.findMany({
-      where: { Codcli: { in: targetCodClis } },
+      where: { Codcli: { in: todosCodClis } },
       select: { Pedido: true },
     })
 

@@ -1,14 +1,6 @@
-/**
- * GET /api/perfil
- *
- * CORREÇÕES APLICADAS:
- * - P3.1: Usa verifyToken() centralizado
- * - P3.3: Select explícito — evita retornar dados desnecessários do banco
- * - Segurança: CPF mascarado é feito no servidor, não no cliente
- */
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { resolverFamilia } from '@/lib/paciente'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,49 +9,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ sucesso: false, mensagem: 'Não autorizado.' }, { status: 401 })
     }
 
-    const responsavelId = auth.id
-
-    // Busca contratante e pacientes em paralelo
-    const [contratante, pacientes] = await Promise.all([
-      prisma.cLIENTEs.findUnique({
-        where: { CodCli: responsavelId },
-        select: {
-          CodCli: true,
-          Cliente: true,
-          Razao: true,
-          CPF: true,
-          EMail: true,
-          Situacao: true,
-        },
-      }),
-      prisma.cLIENTEs.findMany({
-        where: { CodCli1: responsavelId },
-        select: { Cliente: true },
-      }),
-    ])
-
-    if (!contratante) {
+    const familia = await resolverFamilia(auth.id)
+    if (!familia) {
       return NextResponse.json({ sucesso: false, mensagem: 'Perfil não localizado.' }, { status: 404 })
     }
 
-    // Máscara do CPF realizada no servidor (P0.6 mitigação parcial)
+    const { responsavel, paciente, pacientes } = familia
+
     let cpfMascarado = '***.***.***-**'
-    if (contratante.CPF) {
-      const cleanCpf = contratante.CPF.replace(/\D/g, '')
+    if (responsavel.CPF) {
+      const cleanCpf = responsavel.CPF.replace(/\D/g, '')
       if (cleanCpf.length >= 10) {
         cpfMascarado = `${cleanCpf.substring(0, 3)}.***.***-${cleanCpf.substring(cleanCpf.length - 2)}`
       }
     }
 
+    const nomePacienteVinculado =
+      paciente && paciente.CodCli !== responsavel.CodCli
+        ? paciente.Cliente || paciente.Razao
+        : pacientes.find((p) => p.CodCli !== responsavel.CodCli)?.Cliente || null
+
     return NextResponse.json({
       sucesso: true,
       perfil: {
-        id: contratante.CodCli,
-        nome: contratante.Cliente || contratante.Razao || '',
-        pacienteVinculado: pacientes.length > 0 ? pacientes[0].Cliente : null,
+        id: responsavel.CodCli,
+        nome: responsavel.Cliente || responsavel.Razao || 'Familiar Responsável',
+        pacienteVinculado: nomePacienteVinculado || paciente?.Cliente || 'Assistência Familiar',
+        pacienteId: paciente.CodCli,
         cpf: cpfMascarado,
-        email: contratante.EMail || null,
-        ativo: contratante.Situacao !== 'I',
+        email: responsavel.EMail || null,
+        ativo: responsavel.Situacao !== 'I',
       },
     })
   } catch (error) {

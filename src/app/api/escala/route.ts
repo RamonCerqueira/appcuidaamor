@@ -1,9 +1,7 @@
-/**
- * GET /api/escala
- */
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { resolverFamilia } from '@/lib/paciente'
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,8 +9,6 @@ export async function GET(request: NextRequest) {
     if (!auth) {
       return NextResponse.json({ sucesso: false, mensagem: 'Não autorizado.' }, { status: 401 })
     }
-
-    const responsavelId = auth.id
 
     const { searchParams } = new URL(request.url)
     const yearParam = searchParams.get('year')
@@ -32,17 +28,16 @@ export async function GET(request: NextRequest) {
     const dataInicio = new Date(year, month, 1)
     const dataFim = new Date(year, month + 1, 0, 23, 59, 59)
 
-    // 1. Busca pacientes do responsável ou usa o próprio ID se for o paciente
-    const pacientesVinculados = await prisma.cLIENTEs.findMany({
-      where: { CodCli1: responsavelId },
-      select: { CodCli: true },
-    })
+    const familia = await resolverFamilia(auth.id)
+    if (!familia) {
+      return NextResponse.json({ sucesso: false, mensagem: 'Perfil não localizado.' }, { status: 404 })
+    }
 
-    const targetCodCli = pacientesVinculados.length > 0 ? pacientesVinculados[0].CodCli : responsavelId
+    const { responsavel, paciente, codClisPacientes } = familia
 
-    // 2. Busca serviços do paciente
+    // Busca serviços dos pacientes vinculados
     const servicosDoPaciente = await prisma.servico.findMany({
-      where: { Codcli: targetCodCli },
+      where: { Codcli: { in: codClisPacientes } },
       select: { Pedido: true, HoraInicio: true, HoraSaida: true },
     })
 
@@ -113,19 +108,14 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const responsavel = await prisma.cLIENTEs.findUnique({
-      where: { CodCli: responsavelId },
-      select: { Cliente: true },
-    })
-
-    const nomeResponsavel = responsavel?.Cliente || ''
+    const nomeResponsavel = responsavel?.Cliente || responsavel?.Razao || 'Responsável'
     const iniciais = nomeResponsavel
       .split(' ')
       .filter(Boolean)
       .map((n: string) => n[0])
       .slice(0, 2)
       .join('')
-      .toUpperCase() || '--'
+      .toUpperCase() || 'CA'
 
     return NextResponse.json({
       sucesso: true,
