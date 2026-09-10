@@ -162,64 +162,32 @@ export async function POST(request: NextRequest) {
 
     const parsedDate = parseDateInput(String(senha).trim())
 
-    // Gera múltiplos fragmentos de busca para cobrir CPFs em qualquer formato gravado no banco
-    // (ex: "041.991.605-90", "41.991.605-90", "041991605-90", "04199160590", "4199160590")
-    const searchTokens: string[] = []
-    if (cleanCpfNoZeros.length >= 5) searchTokens.push(cleanCpfNoZeros)
-    if (cleanCpfWithZeros.length === 11) searchTokens.push(cleanCpfWithZeros)
+    // 1. Gera tokens fortes específicos do CPF informado
+    const strongTokens = Array.from(
+      new Set(
+        [
+          cleanCpfWithZeros,
+          rawDigits,
+          cleanCpfNoZeros,
+          rawDigits.length === 11
+            ? `${rawDigits.slice(0, 3)}.${rawDigits.slice(3, 6)}.${rawDigits.slice(6, 9)}-${rawDigits.slice(9)}`
+            : null,
+          rawDigits.length === 11
+            ? `${rawDigits.slice(0, 9)}-${rawDigits.slice(9)}`
+            : null,
+          rawDigits.length === 11
+            ? `${rawDigits.slice(0, 3)}.${rawDigits.slice(3, 6)}.${rawDigits.slice(6, 9)}`
+            : null,
+          cleanCpfNoZeros.length >= 8
+            ? `${cleanCpfNoZeros.slice(0, -2)}-${cleanCpfNoZeros.slice(-2)}`
+            : null,
+        ].filter((t): t is string => Boolean(t) && (t as string).length >= 6)
+      )
+    )
 
-    if (rawDigits.length === 11) {
-      const p1 = rawDigits.slice(0, 3)
-      const p2 = rawDigits.slice(3, 6)
-      const p3 = rawDigits.slice(6, 9)
-      const p4 = rawDigits.slice(9, 11)
-
-      searchTokens.push(`${p1}.${p2}.${p3}-${p4}`)
-      searchTokens.push(`${p1}.${p2}.${p3}`)
-      searchTokens.push(`${p2}.${p3}-${p4}`)
-      searchTokens.push(`${p1}.${p2}`)
-      searchTokens.push(`${p2}.${p3}`)
-      searchTokens.push(`${p3}-${p4}`)
-      searchTokens.push(`${rawDigits.slice(0, 9)}-${p4}`)
-      if (p2.length === 3) searchTokens.push(p2)
-      if (p3.length === 3) searchTokens.push(p3)
-    } else if (cleanCpfNoZeros.length >= 8) {
-      const p1 = cleanCpfNoZeros.slice(0, 2)
-      const p2 = cleanCpfNoZeros.slice(2, 5)
-      const p3 = cleanCpfNoZeros.slice(5, 8)
-      const p4 = cleanCpfNoZeros.slice(8)
-
-      searchTokens.push(`${p1}.${p2}.${p3}-${p4}`)
-      searchTokens.push(`${p2}.${p3}-${p4}`)
-      searchTokens.push(`${p2}.${p3}`)
-      searchTokens.push(`${p3}-${p4}`)
-    }
-
-    if (rawDigits.length >= 6) {
-      searchTokens.push(rawDigits.slice(0, 6))
-      searchTokens.push(rawDigits.slice(-6))
-    }
-
-    // Deduplica tokens válidos
-    const uniqueTokens = Array.from(new Set(searchTokens.filter((t) => t && t.length >= 3)))
-
-    const orClauses: any[] = uniqueTokens.map((token) => ({
-      CPF: { contains: token },
-    }))
-
-    // Se temos uma data de nascimento válida, inclui também busca direta pela data
-    if (parsedDate && parsedDate.day && parsedDate.month) {
-      orClauses.push({
-        AND: [
-          { Dia_Nasc: parsedDate.day },
-          { Mes_Nasc: parsedDate.month },
-        ],
-      })
-    }
-
-    const candidatos = await prisma.cLIENTEs.findMany({
+    let candidatos = await prisma.cLIENTEs.findMany({
       where: {
-        OR: orClauses,
+        OR: strongTokens.map((token) => ({ CPF: { contains: token } })),
       },
       select: {
         CodCli: true,
@@ -232,10 +200,45 @@ export async function POST(request: NextRequest) {
         Mes_Nasc: true,
         Ano_Nasc: true,
       },
-      take: 60,
+      take: 50,
     })
 
-    console.log(`[LOGIN ATTEMPT] CPF: ${cpf}, Senha/Data: ${senha}, Tokens: ${uniqueTokens.length}, Candidatos: ${candidatos.length}`)
+    // 2. Se não encontrou candidatos com os tokens fortes, faz fallback abrangente
+    if (candidatos.length === 0) {
+      const fallbackClauses: any[] = []
+      if (rawDigits.length >= 5) {
+        fallbackClauses.push({ CPF: { contains: rawDigits.slice(-6) } })
+        fallbackClauses.push({ CPF: { contains: rawDigits.slice(0, 6) } })
+      }
+      if (parsedDate && parsedDate.day && parsedDate.month) {
+        fallbackClauses.push({
+          AND: [
+            { Dia_Nasc: parsedDate.day },
+            { Mes_Nasc: parsedDate.month },
+          ],
+        })
+      }
+
+      if (fallbackClauses.length > 0) {
+        candidatos = await prisma.cLIENTEs.findMany({
+          where: { OR: fallbackClauses },
+          select: {
+            CodCli: true,
+            CodCli1: true,
+            Cliente: true,
+            Razao: true,
+            CPF: true,
+            CodUsu: true,
+            Dia_Nasc: true,
+            Mes_Nasc: true,
+            Ano_Nasc: true,
+          },
+          take: 60,
+        })
+      }
+    }
+
+    console.log(`[LOGIN ATTEMPT] CPF: ${cpf}, Senha/Data: ${senha}, Tokens: ${strongTokens.length}, Candidatos: ${candidatos.length}`)
 
     let clienteEncontrado: (typeof candidatos)[0] | null = null
     let credencialValida = false

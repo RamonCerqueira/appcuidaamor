@@ -57,6 +57,27 @@ export default function Login() {
     if (error) setError('');
   };
 
+  const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+
+    // Se o usuário estiver digitando números (data de nascimento), aplica a máscara DD/MM/AAAA automaticamente
+    if (/^[\d/]*$/.test(raw)) {
+      const digits = raw.replace(/\D/g, '').slice(0, 8);
+      let formatted = digits;
+      if (digits.length > 4) {
+        formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+      } else if (digits.length > 2) {
+        formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+      }
+      setSenha(formatted);
+    } else {
+      // Senha alfanumérica cadastrada no ERP
+      setSenha(raw);
+    }
+
+    if (error) setError('');
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -196,12 +217,9 @@ export default function Login() {
               <input
                 id="senha-input"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Ex: 27/12/1940 ou 27121940"
+                placeholder="DD/MM/AAAA ou sua senha"
                 value={senha}
-                onChange={(e) => {
-                  setSenha(e.target.value);
-                  if (error) setError('');
-                }}
+                onChange={handleSenhaChange}
                 required
                 autoComplete="current-password"
                 className="w-full pl-11 pr-12 py-3.5 bg-white text-slate-800 text-sm font-semibold rounded-2xl border border-slate-200/90 focus:border-[var(--color-brand-primary)] focus:ring-3 focus:ring-[var(--color-brand-primary)]/10 transition-all duration-200 placeholder:text-slate-400 outline-none shadow-xs"
